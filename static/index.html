@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ClassIn 강사 포털</title>
+<style>
+:root{--bg:#0f1117;--card:#1a1d27;--card2:#1e2230;--input:#141722;--bdr:#2a2e3d;--bdr-f:#4f8cff;--tx:#e8eaf0;--tx2:#8b90a0;--txb:#fff;--ac:#4f8cff;--ac-s:rgba(79,140,255,.12);--ok:#34d399;--ok-s:rgba(52,211,153,.12);--er:#f87171;--er-s:rgba(248,113,113,.12);--warn:#fbbf24;--r:12px;--rs:8px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh}
+.app{display:flex;min-height:100vh}
+
+/* Sidebar */
+.side{width:240px;background:var(--card);border-right:1px solid var(--bdr);position:fixed;top:0;left:0;bottom:0;display:flex;flex-direction:column;z-index:100}
+.side-hd{padding:20px 16px;border-bottom:1px solid var(--bdr)}
+.side-hd h1{font-size:16px;color:var(--txb)}
+.side-hd small{font-size:11px;color:var(--tx2)}
+.nav{padding:12px 8px;flex:1;overflow-y:auto}
+.nav-lb{font-size:10px;font-weight:700;color:var(--tx2);text-transform:uppercase;letter-spacing:.8px;padding:0 8px;margin:14px 0 6px}
+.ni{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:var(--rs);cursor:pointer;font-size:13px;color:var(--tx2);transition:.15s}
+.ni:hover{background:var(--ac-s);color:var(--tx)}
+.ni.on{background:var(--ac-s);color:var(--ac)}
+.ni .ic{width:20px;text-align:center;font-size:15px}
+.side-ft{padding:12px 16px;border-top:1px solid var(--bdr);font-size:11px;color:var(--tx2);display:flex;align-items:center;gap:6px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--er)}
+.dot.on{background:var(--ok);box-shadow:0 0 6px rgba(52,211,153,.5)}
+
+/* Main */
+.main{flex:1;margin-left:240px;padding:28px 36px;max-width:900px}
+.pg{display:none}.pg.on{display:block}
+.pg-hd{margin-bottom:24px}
+.pg-hd h2{font-size:22px;font-weight:700;color:var(--txb);margin-bottom:4px}
+.pg-hd p{font-size:13px;color:var(--tx2)}
+
+/* Card */
+.cd{background:var(--card);border:1px solid var(--bdr);border-radius:var(--r);padding:20px;margin-bottom:16px}
+.cd-t{font-size:14px;font-weight:600;color:var(--txb);margin-bottom:12px;display:flex;align-items:center;gap:6px}
+
+/* Form */
+.fg{margin-bottom:12px}
+.fl{display:block;font-size:12px;font-weight:500;color:var(--tx2);margin-bottom:4px}
+.fi{width:100%;padding:8px 12px;background:var(--input);border:1px solid var(--bdr);border-radius:var(--rs);color:var(--tx);font-size:13px;outline:none;transition:.2s}
+.fi:focus{border-color:var(--bdr-f)}
+select.fi{appearance:none}
+.fh{font-size:11px;color:var(--tx2);margin-top:3px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:4px;padding:8px 16px;border:none;border-radius:var(--rs);font-size:13px;font-weight:600;cursor:pointer;transition:.15s}
+.btn-p{background:var(--ac);color:#fff}.btn-p:hover{background:#3d7aee}
+.btn-o{background:transparent;color:var(--tx);border:1px solid var(--bdr)}.btn-o:hover{background:var(--card2)}
+.btn-s{background:var(--ok);color:#000}
+.btn-d{background:var(--er);color:#fff}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.bg{display:flex;gap:8px;margin-top:14px}
+
+/* Result */
+.res{margin-top:12px;padding:10px 12px;border-radius:var(--rs);font-size:12px;line-height:1.5;display:none}
+.res.show{display:block}
+.res.ok{background:var(--ok-s);border:1px solid rgba(52,211,153,.3);color:var(--ok)}
+.res.err{background:var(--er-s);border:1px solid rgba(248,113,113,.3);color:var(--er)}
+.rj{margin-top:8px;padding:8px;background:var(--bg);border-radius:var(--rs);font-family:monospace;font-size:11px;color:var(--tx2);max-height:160px;overflow-y:auto;white-space:pre-wrap;word-break:break-all}
+
+/* Table */
+.tbl{width:100%;border-collapse:collapse;font-size:12px}
+.tbl th{text-align:left;padding:6px 8px;color:var(--tx2);border-bottom:1px solid var(--bdr);font-weight:500}
+.tbl td{padding:6px 8px;border-bottom:1px solid var(--bdr)}
+.tbl .uid{color:var(--ac);font-family:monospace;font-size:11px}
+.tbl .st{color:var(--ok)}
+
+/* Stats */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+.stat{background:var(--card);border:1px solid var(--bdr);border-radius:var(--r);padding:16px;text-align:center}
+.stat .num{font-size:28px;font-weight:700;color:var(--ac)}
+.stat .lbl{font-size:11px;color:var(--tx2);margin-top:4px}
+
+/* Stages */
+.stg{display:flex;align-items:center;gap:10px;padding:10px;border-radius:var(--rs);background:var(--input);border:1px solid var(--bdr);margin-bottom:8px}
+.stg-n{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;background:var(--ok);color:#000;flex-shrink:0}
+.stg h4{font-size:13px;color:var(--tx)}.stg p{font-size:11px;color:var(--tx2)}
+
+/* Spinner */
+.sp{display:inline-block;width:14px;height:14px;border:2px solid var(--bdr);border-top:2px solid var(--ac);border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="app">
+<nav class="side">
+    <div class="side-hd"><h1>ClassIn 강사 포털</h1><small>Teacher Portal v1.0</small></div>
+    <div class="nav">
+        <div class="nav-lb">시스템</div>
+        <div class="ni on" data-p="dashboard"><span class="ic">📊</span>대시보드</div>
+        <div class="ni" data-p="settings"><span class="ic">⚙️</span>API 설정</div>
+        <div class="nav-lb">사용자</div>
+        <div class="ni" data-p="teachers"><span class="ic">👨‍🏫</span>강사 관리</div>
+        <div class="ni" data-p="students"><span class="ic">👩‍🎓</span>학생 관리</div>
+        <div class="nav-lb">수업</div>
+        <div class="ni" data-p="courses"><span class="ic">📚</span>코스 관리</div>
+        <div class="ni" data-p="classes"><span class="ic">📅</span>수업 관리</div>
+        <div class="nav-lb">데이터</div>
+        <div class="ni" data-p="webhooks"><span class="ic">🔔</span>웹훅 데이터</div>
+        <div class="ni" data-p="feedback"><span class="ic">📝</span>피드백</div>
+        <div class="ni" data-p="settlement"><span class="ic">💰</span>정산</div>
+    </div>
+    <div class="side-ft"><div class="dot" id="dot"></div><span id="dotTx">미연결</span></div>
+</nav>
+<main class="main">
+
+<!-- Dashboard -->
+<div class="pg on" id="pg-dashboard">
+    <div class="pg-hd"><h2>대시보드</h2><p>ClassIn 강사 포털 현황</p></div>
+    <div class="stats" id="dashStats">
+        <div class="stat"><div class="num" id="ds-t">0</div><div class="lbl">강사</div></div>
+        <div class="stat"><div class="num" id="ds-s">0</div><div class="lbl">학생</div></div>
+        <div class="stat"><div class="num" id="ds-c">0</div><div class="lbl">코스</div></div>
+    </div>
+    <div class="stats">
+        <div class="stat"><div class="num" id="ds-cl">0</div><div class="lbl">수업</div></div>
+        <div class="stat"><div class="num" id="ds-w">0</div><div class="lbl">웹훅</div></div>
+        <div class="stat"><div class="num" id="ds-f">0</div><div class="lbl">피드백</div></div>
+    </div>
+    <div class="cd">
+        <div class="cd-t">🚀 개발 완료 단계</div>
+        <div class="stg"><div class="stg-n">1</div><div><h4>API 연결</h4><p>SID/SECRET 인증</p></div></div>
+        <div class="stg"><div class="stg-n">2</div><div><h4>강사/학생 관리</h4><p>등록, 수정 (v1 API)</p></div></div>
+        <div class="stg"><div class="stg-n">3</div><div><h4>코스/수업</h4><p>생성, 학생 배정, 삭제</p></div></div>
+        <div class="stg"><div class="stg-n">4</div><div><h4>수업 입장</h4><p>getLoginLinked 원클릭</p></div></div>
+        <div class="stg"><div class="stg-n">5</div><div><h4>웹훅</h4><p>Data Subscription 수신</p></div></div>
+        <div class="stg"><div class="stg-n">6</div><div><h4>피드백/정산</h4><p>수업 평가, 시수 집계</p></div></div>
+    </div>
+</div>
+
+<!-- Settings -->
+<div class="pg" id="pg-settings">
+    <div class="pg-hd"><h2>API 설정</h2><p>ClassIn API 자격 증명 및 연결 테스트</p></div>
+    <div class="cd">
+        <div class="cd-t">🔑 자격 증명</div>
+        <div class="row">
+            <div class="fg"><label class="fl">School SID</label><input class="fi" id="inSID" placeholder="ClassIn SID"></div>
+            <div class="fg"><label class="fl">SECRET Key</label><input class="fi" id="inSEC" type="password" placeholder="SECRET"></div>
+        </div>
+        <div class="bg"><button class="btn btn-p" onclick="saveCreds()">💾 저장</button>
+        <button class="btn btn-o" onclick="testConn()">🔌 연결 테스트</button></div>
+        <div class="res" id="setRes"><div id="setResT"></div><div id="setResM"></div><div class="rj" id="setResR"></div></div>
+    </div>
+    <div class="cd">
+        <div class="cd-t">🔬 커스텀 API 호출</div>
+        <div class="row">
+            <div class="fg"><label class="fl">Action</label><input class="fi" id="caAct" placeholder="register"></div>
+            <div class="fg"><label class="fl">Params (JSON)</label><input class="fi" id="caP" placeholder='{"telephone":"82-010..."}'></div>
+        </div>
+        <div class="bg"><button class="btn btn-o" onclick="customCall()">▶️ 호출</button></div>
+        <div class="res" id="caRes"><div id="caResT"></div><div id="caResM"></div><div class="rj" id="caResR"></div></div>
+    </div>
+</div>
+
+<!-- Teachers -->
+<div class="pg" id="pg-teachers">
+    <div class="pg-hd"><h2>강사 관리</h2><p>ClassIn에 강사를 등록하고 관리합니다</p></div>
+    <div class="cd">
+        <div class="cd-t">➕ 강사 등록</div>
+        <div class="row3">
+            <div class="fg"><label class="fl">전화번호</label><input class="fi" id="tPh" placeholder="82-01012345678"></div>
+            <div class="fg"><label class="fl">닉네임</label><input class="fi" id="tNk" placeholder="홍길동 강사"></div>
+            <div class="fg"><label class="fl">비밀번호</label><input class="fi" id="tPw" value="classin2024"></div>
+        </div>
+        <div class="bg"><button class="btn btn-p" onclick="regUser('teacher')">🎓 강사 등록</button></div>
+        <div class="res" id="tRes"><div id="tResT"></div><div id="tResM"></div><div class="rj" id="tResR"></div></div>
+    </div>
+    <div class="cd"><div class="cd-t">📋 강사 목록</div><div id="tList">로딩...</div></div>
+</div>
+
+<!-- Students -->
+<div class="pg" id="pg-students">
+    <div class="pg-hd"><h2>학생 관리</h2><p>ClassIn에 학생을 등록하고 관리합니다</p></div>
+    <div class="cd">
+        <div class="cd-t">➕ 학생 등록</div>
+        <div class="row3">
+            <div class="fg"><label class="fl">전화번호</label><input class="fi" id="sPh" placeholder="82-01012345678"></div>
+            <div class="fg"><label class="fl">닉네임</label><input class="fi" id="sNk" placeholder="김학생"></div>
+            <div class="fg"><label class="fl">비밀번호</label><input class="fi" id="sPw" value="classin2024"></div>
+        </div>
+        <div class="bg"><button class="btn btn-p" onclick="regUser('student')">👩‍🎓 학생 등록</button></div>
+        <div class="res" id="sRes"><div id="sResT"></div><div id="sResM"></div><div class="rj" id="sResR"></div></div>
+    </div>
+    <div class="cd"><div class="cd-t">📋 학생 목록</div><div id="sList">로딩...</div></div>
+</div>
+
+<!-- Courses -->
+<div class="pg" id="pg-courses">
+    <div class="pg-hd"><h2>코스 관리</h2><p>코스를 생성하고 강사/학생을 배정합니다</p></div>
+    <div class="cd">
+        <div class="cd-t">➕ 코스 생성</div>
+        <div class="row">
+            <div class="fg"><label class="fl">코스 이름</label><input class="fi" id="coNm" placeholder="한국어 초급 A"></div>
+            <div class="fg"><label class="fl">담당 강사 UID (선택)</label><input class="fi" id="coTu" placeholder="강사 UID"></div>
+        </div>
+        <div class="bg"><button class="btn btn-p" onclick="createCourse()">📚 코스 생성</button></div>
+        <div class="res" id="coRes"><div id="coResT"></div><div id="coResM"></div><div class="rj" id="coResR"></div></div>
+    </div>
+    <div class="cd">
+        <div class="cd-t">🔗 코스에 학생 배정</div>
+        <div class="row">
+            <div class="fg"><label class="fl">코스 ID</label><input class="fi" id="csCoId" placeholder="코스 ID"></div>
+            <div class="fg"><label class="fl">학생 UID</label><input class="fi" id="csSuId" placeholder="학생 UID"></div>
+        </div>
+        <div class="bg"><button class="btn btn-o" onclick="addStudentToCourse()">➕ 학생 배정</button></div>
+        <div class="res" id="csRes"><div id="csResT"></div><div id="csResM"></div></div>
+    </div>
+    <div class="cd"><div class="cd-t">📋 코스 목록</div><div id="coList">로딩...</div></div>
+</div>
+
+<!-- Classes -->
+<div class="pg" id="pg-classes">
+    <div class="pg-hd"><h2>수업 관리</h2><p>수업(Lesson)을 생성하고 입장 링크를 받습니다</p></div>
+    <div class="cd">
+        <div class="cd-t">➕ 수업 생성</div>
+        <div class="row">
+            <div class="fg"><label class="fl">코스 ID</label><input class="fi" id="clCoId" placeholder="코스 ID"></div>
+            <div class="fg"><label class="fl">수업 이름</label><input class="fi" id="clNm" placeholder="1회차 수업"></div>
+        </div>
+        <div class="row3">
+            <div class="fg"><label class="fl">시작 (날짜+시간)</label><input class="fi" id="clBeg" type="datetime-local"></div>
+            <div class="fg"><label class="fl">종료 (날짜+시간)</label><input class="fi" id="clEnd" type="datetime-local"></div>
+            <div class="fg"><label class="fl">강사 UID</label><input class="fi" id="clTu" placeholder="강사 UID"></div>
+        </div>
+        <div class="bg"><button class="btn btn-p" onclick="createClass()">📅 수업 생성</button></div>
+        <div class="res" id="clRes"><div id="clResT"></div><div id="clResM"></div><div class="rj" id="clResR"></div></div>
+    </div>
+    <div class="cd">
+        <div class="cd-t">🚀 수업 입장 링크</div>
+        <div class="row">
+            <div class="fg"><label class="fl">사용자 UID</label><input class="fi" id="llUid" placeholder="UID"></div>
+            <div class="fg" style="display:flex;align-items:flex-end"><button class="btn btn-s" onclick="getLoginLink()">🔗 입장 링크 생성</button></div>
+        </div>
+        <div class="res" id="llRes"><div id="llResT"></div><div id="llResM"></div></div>
+    </div>
+    <div class="cd"><div class="cd-t">📋 수업 목록</div><div id="clList">로딩...</div></div>
+</div>
+
+<!-- Webhooks -->
+<div class="pg" id="pg-webhooks">
+    <div class="pg-hd"><h2>웹훅 데이터</h2><p>ClassIn Data Subscription으로 수신한 실시간 데이터</p></div>
+    <div class="cd">
+        <div class="cd-t">📡 웹훅 엔드포인트</div>
+        <p style="font-size:12px;color:var(--tx2);margin-bottom:8px">ClassIn 관리자에게 아래 URL을 전달하세요:</p>
+        <code style="display:block;padding:10px;background:var(--input);border-radius:var(--rs);font-size:12px;color:var(--ac);word-break:break-all" id="whUrl">
+            https://[배포URL]/api/webhook/classin
+        </code>
+        <p style="font-size:11px;color:var(--tx2);margin-top:6px">출석, 보상, 카메라, 네트워크, 입/퇴장 등 수업 중 이벤트가 실시간 POST됩니다.</p>
+    </div>
+    <div class="cd">
+        <div class="cd-t">📋 수신 내역 <button class="btn btn-o" style="margin-left:auto;padding:4px 10px;font-size:11px" onclick="loadWebhooks()">새로고침</button></div>
+        <div id="whList">로딩...</div>
+    </div>
+</div>
+
+<!-- Feedback -->
+<div class="pg" id="pg-feedback">
+    <div class="pg-hd"><h2>피드백</h2><p>수업 후 강사가 학생에게 피드백을 작성합니다</p></div>
+    <div class="cd">
+        <div class="cd-t">✍️ 피드백 작성</div>
+        <div class="row">
+            <div class="fg"><label class="fl">코스 ID</label><input class="fi" id="fbCo" placeholder="코스 ID"></div>
+            <div class="fg"><label class="fl">수업 ID</label><input class="fi" id="fbCl" placeholder="수업 ID"></div>
+        </div>
+        <div class="row">
+            <div class="fg"><label class="fl">강사 UID</label><input class="fi" id="fbTu" placeholder="강사 UID"></div>
+            <div class="fg"><label class="fl">학생 UID</label><input class="fi" id="fbSu" placeholder="학생 UID"></div>
+        </div>
+        <div class="fg"><label class="fl">피드백 내용</label><textarea class="fi" id="fbCm" rows="3" placeholder="수업 피드백을 작성하세요..."></textarea></div>
+        <div class="bg"><button class="btn btn-p" onclick="submitFeedback()">📝 피드백 제출</button></div>
+        <div class="res" id="fbRes"><div id="fbResT"></div><div id="fbResM"></div></div>
+    </div>
+    <div class="cd"><div class="cd-t">📋 피드백 내역</div><div id="fbList">로딩...</div></div>
+</div>
+
+<!-- Settlement -->
+<div class="pg" id="pg-settlement">
+    <div class="pg-hd"><h2>정산</h2><p>강사별 수업 시수 및 정산 데이터</p></div>
+    <div class="cd">
+        <div class="cd-t">💰 정산 조회</div>
+        <div class="row">
+            <div class="fg"><label class="fl">강사 UID (빈칸=전체)</label><input class="fi" id="stTu" placeholder="강사 UID"></div>
+            <div class="fg" style="display:flex;align-items:flex-end"><button class="btn btn-p" onclick="loadSettlement()">📊 조회</button></div>
+        </div>
+        <div id="stResult"></div>
+    </div>
+</div>
+
+</main>
+</div>
+
+<script>
+// ─── API Helper ─────────────────────────────────
+async function api(url,method='GET',body=null){
+    const o={method,headers:{'Content-Type':'application/json'}};
+    if(body)o.body=JSON.stringify(body);
+    const r=await fetch(url,o);
+    if(!r.ok){const e=await r.json().catch(()=>({detail:r.statusText}));throw new Error(e.detail||'요청 실패')}
+    return r.json();
+}
+function show(el,ok,title,msg,raw){
+    el.className='res show '+(ok?'ok':'err');
+    el.querySelector('[id$="T"]').textContent=ok?'✅ 성공':'❌ 실패';
+    el.querySelector('[id$="M"]').textContent=msg;
+    const rEl=el.querySelector('.rj');
+    if(rEl)rEl.textContent=raw?JSON.stringify(raw,null,2):'';
+}
+
+// ─── Navigation ─────────────────────────────────
+document.querySelectorAll('.ni').forEach(n=>n.addEventListener('click',()=>{
+    document.querySelectorAll('.ni').forEach(x=>x.classList.remove('on'));
+    n.classList.add('on');
+    document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
+    const pg=document.getElementById('pg-'+n.dataset.p);
+    if(pg)pg.classList.add('on');
+    // Auto-load data
+    const p=n.dataset.p;
+    if(p==='dashboard')loadDash();
+    if(p==='teachers')loadUsers('teacher');
+    if(p==='students')loadUsers('student');
+    if(p==='courses')loadCourses();
+    if(p==='classes')loadClasses();
+    if(p==='webhooks')loadWebhooks();
+    if(p==='feedback')loadFeedbacks();
+}));
+
+// ─── Stage 1: Settings ──────────────────────────
+async function saveCreds(){
+    const sid=document.getElementById('inSID').value.trim();
+    const sec=document.getElementById('inSEC').value.trim();
+    if(!sid||!sec)return alert('SID와 SECRET을 입력하세요.');
+    try{
+        await api('/api/credentials','POST',{sid,secret:sec});
+        show(document.getElementById('setRes'),true,'','저장 완료',null);
+    }catch(e){show(document.getElementById('setRes'),false,'',e.message,null)}
+}
+async function testConn(){
+    try{
+        const d=await api('/api/test-connection','POST');
+        show(document.getElementById('setRes'),d.success,'',d.message,d.raw);
+        if(d.success){document.getElementById('dot').classList.add('on');document.getElementById('dotTx').textContent='연결됨';}
+    }catch(e){show(document.getElementById('setRes'),false,'',e.message,null)}
+}
+async function customCall(){
+    const act=document.getElementById('caAct').value.trim();
+    let params=null;
+    const ps=document.getElementById('caP').value.trim();
+    if(ps)try{params=JSON.parse(ps)}catch{return alert('JSON 형식 오류')}
+    try{
+        const d=await api('/api/call','POST',{action:act,params});
+        show(document.getElementById('caRes'),d.success,'',d.success?'호출 성공':d.error,d.data||null);
+    }catch(e){show(document.getElementById('caRes'),false,'',e.message,null)}
+}
+
+// ─── Stage 2: Users ─────────────────────────────
+async function regUser(role){
+    const pre=role==='teacher'?'t':'s';
+    const ph=document.getElementById(pre+'Ph').value.trim();
+    const nk=document.getElementById(pre+'Nk').value.trim();
+    const pw=document.getElementById(pre+'Pw').value.trim();
+    if(!ph||!pw)return alert('전화번호와 비밀번호 필수');
+    try{
+        const d=await api('/api/users/register','POST',{telephone:ph,password:pw,nickname:nk,role});
+        show(document.getElementById(pre+'Res'),d.success,'',d.message+(d.uid?' (UID:'+d.uid+')':''),d.raw);
+        if(d.success)loadUsers(role);
+    }catch(e){show(document.getElementById(pre+'Res'),false,'',e.message,null)}
+}
+async function loadUsers(role){
+    const el=document.getElementById(role==='teacher'?'tList':'sList');
+    try{
+        const d=await api('/api/users?role='+role);
+        if(!d.users.length){el.innerHTML='<span style="color:var(--tx2)">등록된 '+(role==='teacher'?'강사':'학생')+'가 없습니다.</span>';return}
+        let h='<table class="tbl"><tr><th>UID</th><th>전화번호</th><th>닉네임</th><th>상태</th></tr>';
+        d.users.forEach(u=>{h+=`<tr><td class="uid">${u.uid}</td><td>${u.telephone}</td><td style="color:var(--txb)">${u.nickname}</td><td class="st">● ${u.status}</td></tr>`});
+        h+='</table><div style="margin-top:6px;font-size:11px;color:var(--tx2)">총 '+d.total+'명</div>';
+        el.innerHTML=h;
+    }catch{el.innerHTML='<span style="color:var(--tx2)">목록 없음</span>'}
+}
+
+// ─── Stage 3: Courses ───────────────────────────
+async function createCourse(){
+    const nm=document.getElementById('coNm').value.trim();
+    const tu=document.getElementById('coTu').value.trim();
+    if(!nm)return alert('코스 이름 필수');
+    try{
+        const d=await api('/api/courses/create','POST',{name:nm,teacherUid:tu||null});
+        show(document.getElementById('coRes'),d.success,'',d.message,d.raw);
+        if(d.success)loadCourses();
+    }catch(e){show(document.getElementById('coRes'),false,'',e.message,null)}
+}
+async function addStudentToCourse(){
+    const co=document.getElementById('csCoId').value.trim();
+    const su=document.getElementById('csSuId').value.trim();
+    if(!co||!su)return alert('코스 ID와 학생 UID 필수');
+    try{
+        const d=await api('/api/courses/add-student','POST',{courseId:co,studentUid:su});
+        show(document.getElementById('csRes'),d.success,'',d.message,null);
+    }catch(e){show(document.getElementById('csRes'),false,'',e.message,null)}
+}
+async function loadCourses(){
+    try{
+        const d=await api('/api/courses');
+        const el=document.getElementById('coList');
+        if(!d.courses.length){el.innerHTML='<span style="color:var(--tx2)">코스 없음</span>';return}
+        let h='<table class="tbl"><tr><th>코스 ID</th><th>이름</th><th>강사 UID</th><th>수업 수</th></tr>';
+        d.courses.forEach(c=>{h+=`<tr><td class="uid">${c.courseId}</td><td style="color:var(--txb)">${c.name}</td><td>${c.teacherUid||'-'}</td><td>${(c.classes||[]).length}</td></tr>`});
+        el.innerHTML=h+'</table>';
+    }catch{}
+}
+
+// ─── Stage 3+4: Classes ─────────────────────────
+async function createClass(){
+    const co=document.getElementById('clCoId').value.trim();
+    const nm=document.getElementById('clNm').value.trim();
+    const beg=document.getElementById('clBeg').value;
+    const end=document.getElementById('clEnd').value;
+    const tu=document.getElementById('clTu').value.trim();
+    if(!co||!nm||!beg||!end||!tu)return alert('모든 필드를 입력하세요');
+    const bt=Math.floor(new Date(beg).getTime()/1000);
+    const et=Math.floor(new Date(end).getTime()/1000);
+    try{
+        const d=await api('/api/classes/create','POST',{courseId:co,className:nm,beginTime:bt,endTime:et,teacherUid:tu});
+        show(document.getElementById('clRes'),d.success,'',d.message,d.raw);
+        if(d.success)loadClasses();
+    }catch(e){show(document.getElementById('clRes'),false,'',e.message,null)}
+}
+async function getLoginLink(){
+    const uid=document.getElementById('llUid').value.trim();
+    if(!uid)return alert('UID 필수');
+    try{
+        const d=await api('/api/login-link','POST',{uid});
+        const el=document.getElementById('llRes');
+        if(d.success&&d.url){
+            el.className='res show ok';
+            el.querySelector('#llResT').textContent='✅ 입장 링크';
+            el.querySelector('#llResM').innerHTML=`<a href="${d.url}" target="_blank" style="color:var(--ac);word-break:break-all">${d.url}</a>`;
+        }else{show(el,false,'',d.message||'링크 생성 실패',null)}
+    }catch(e){show(document.getElementById('llRes'),false,'',e.message,null)}
+}
+async function loadClasses(){
+    try{
+        const d=await api('/api/classes');
+        const el=document.getElementById('clList');
+        if(!d.classes.length){el.innerHTML='<span style="color:var(--tx2)">수업 없음</span>';return}
+        let h='<table class="tbl"><tr><th>수업 ID</th><th>코스</th><th>이름</th><th>시작</th><th>종료</th><th>강사</th></tr>';
+        d.classes.forEach(c=>{
+            const b=new Date(c.begin*1000).toLocaleString('ko-KR');
+            const e=new Date(c.end*1000).toLocaleString('ko-KR');
+            h+=`<tr><td class="uid">${c.classId}</td><td>${c.courseId}</td><td style="color:var(--txb)">${c.name}</td><td>${b}</td><td>${e}</td><td>${c.teacherUid}</td></tr>`;
+        });
+        el.innerHTML=h+'</table>';
+    }catch{}
+}
+
+// ─── Stage 5: Webhooks ──────────────────────────
+async function loadWebhooks(){
+    try{
+        const d=await api('/api/webhooks?limit=30');
+        const el=document.getElementById('whList');
+        if(!d.webhooks.length){el.innerHTML='<span style="color:var(--tx2)">수신된 웹훅 없음</span>';return}
+        let h='<table class="tbl"><tr><th>시간</th><th>Cmd</th><th>SID</th></tr>';
+        d.webhooks.reverse().forEach(w=>{h+=`<tr><td>${w.timestamp?.slice(0,19)||''}</td><td style="color:var(--ac)">${w.cmd}</td><td>${w.sid||''}</td></tr>`});
+        el.innerHTML=h+'</table><div style="margin-top:6px;font-size:11px;color:var(--tx2)">총 '+d.total+'건</div>';
+    }catch{}
+}
+
+// ─── Stage 6: Feedback & Settlement ─────────────
+async function submitFeedback(){
+    const co=document.getElementById('fbCo').value.trim();
+    const cl=document.getElementById('fbCl').value.trim();
+    const tu=document.getElementById('fbTu').value.trim();
+    const su=document.getElementById('fbSu').value.trim();
+    const cm=document.getElementById('fbCm').value.trim();
+    if(!co||!cl||!tu||!su||!cm)return alert('모든 필드를 입력하세요');
+    try{
+        const d=await api('/api/feedback/submit','POST',{courseId:co,classId:cl,teacherUid:tu,studentUid:su,comment:cm});
+        show(document.getElementById('fbRes'),d.success,'',d.message,null);
+        if(d.success)loadFeedbacks();
+    }catch(e){show(document.getElementById('fbRes'),false,'',e.message,null)}
+}
+async function loadFeedbacks(){
+    try{
+        const d=await api('/api/feedbacks');
+        const el=document.getElementById('fbList');
+        if(!d.feedbacks.length){el.innerHTML='<span style="color:var(--tx2)">피드백 없음</span>';return}
+        let h='<table class="tbl"><tr><th>날짜</th><th>코스</th><th>수업</th><th>학생</th><th>내용</th></tr>';
+        d.feedbacks.forEach(f=>{h+=`<tr><td>${f.date?.slice(0,10)||''}</td><td>${f.courseId}</td><td>${f.classId}</td><td>${f.studentUid}</td><td style="color:var(--txb)">${f.comment}</td></tr>`});
+        el.innerHTML=h+'</table>';
+    }catch{}
+}
+async function loadSettlement(){
+    const tu=document.getElementById('stTu').value.trim();
+    try{
+        const d=await api('/api/settlement'+(tu?'?teacherUid='+tu:''));
+        const el=document.getElementById('stResult');
+        let h=`<div class="cd" style="margin-top:12px"><div class="cd-t">📊 정산 결과</div>`;
+        h+=`<div class="stats"><div class="stat"><div class="num">${d.totalClasses}</div><div class="lbl">총 수업</div></div>`;
+        h+=`<div class="stat"><div class="num">${d.totalHours}</div><div class="lbl">총 시간(h)</div></div>`;
+        h+=`<div class="stat"><div class="num">${d.teacherUid||'전체'}</div><div class="lbl">강사</div></div></div>`;
+        if(d.classes.length){
+            h+='<table class="tbl"><tr><th>수업</th><th>코스</th><th>시작</th><th>시간(분)</th></tr>';
+            d.classes.forEach(c=>{
+                const mins=Math.round((c.end-c.begin)/60);
+                h+=`<tr><td style="color:var(--txb)">${c.name}</td><td>${c.courseId}</td><td>${new Date(c.begin*1000).toLocaleString('ko-KR')}</td><td>${mins}</td></tr>`;
+            });
+            h+='</table>';
+        }
+        el.innerHTML=h+'</div>';
+    }catch(e){document.getElementById('stResult').innerHTML=`<p style="color:var(--er)">${e.message}</p>`}
+}
+
+// ─── Dashboard ──────────────────────────────────
+async function loadDash(){
+    try{
+        const d=await api('/api/dashboard');
+        document.getElementById('ds-t').textContent=d.teachers;
+        document.getElementById('ds-s').textContent=d.students;
+        document.getElementById('ds-c').textContent=d.courses;
+        document.getElementById('ds-cl').textContent=d.classes;
+        document.getElementById('ds-w').textContent=d.webhooks;
+        document.getElementById('ds-f').textContent=d.feedbacks;
+    }catch{}
+}
+
+// ─── Init ───────────────────────────────────────
+(async()=>{
+    try{
+        const s=await api('/api/credentials/status');
+        if(s.configured){document.getElementById('dot').classList.add('on');document.getElementById('dotTx').textContent='연결됨';}
+    }catch{}
+    loadDash();
+})();
+</script>
+</body>
+</html>
