@@ -107,6 +107,10 @@ if DB_URL:
         with _conn() as c:
             c.cursor().execute("INSERT INTO classin_users(uid,telephone,nickname,role)VALUES(%s,%s,%s,%s)ON CONFLICT(uid)DO UPDATE SET nickname=%s",
                 (uid,telephone,nickname,role,nickname)); c.commit()
+    def del_user(uid):
+        with _conn() as c:
+            cur=c.cursor(); cur.execute("DELETE FROM classin_users WHERE uid=%s",(uid,))
+            cur.execute("DELETE FROM student_profiles WHERE uid=%s",(uid,)); c.commit()
     def list_users(role=None, search="", page=1, per_page=50):
         with _conn() as c:
             cur=c.cursor(); q="SELECT * FROM classin_users WHERE 1=1"; p=[]
@@ -134,6 +138,10 @@ if DB_URL:
         with _conn() as c:
             c.cursor().execute("INSERT INTO courses(course_id,name,teacher_uid)VALUES(%s,%s,%s)ON CONFLICT(course_id)DO UPDATE SET name=%s",
                 (cid,name,tuid,name)); c.commit()
+    def del_course(cid):
+        with _conn() as c:
+            cur=c.cursor(); cur.execute("DELETE FROM courses WHERE course_id=%s",(cid,))
+            cur.execute("DELETE FROM classes WHERE course_id=%s",(cid,)); c.commit()
     def list_courses(teacher_uid=None):
         with _conn() as c:
             cur=c.cursor()
@@ -226,6 +234,10 @@ else:
         for t in [t for t,s in _sessions.items() if s["username"]==u]: del _sessions[t]
 
     def set_user(uid,tel,nick,role): _users[uid]={"uid":uid,"telephone":tel,"nickname":nick,"role":role,"status":"active"}
+    def del_user(uid):
+        with _conn() as c:
+            cur=c.cursor(); cur.execute("DELETE FROM classin_users WHERE uid=%s",(uid,))
+            cur.execute("DELETE FROM student_profiles WHERE uid=%s",(uid,)); c.commit()
     def list_users(role=None,search="",page=1,per_page=50):
         u=list(_users.values())
         if role: u=[x for x in u if x["role"]==role]
@@ -234,6 +246,12 @@ else:
 
     def get_student_profile(uid): return _profiles.get(uid,{"uid":uid,"topik_level":"","purpose":"","notes":"","native_lang":""})
     def set_student_profile(uid,topik="",purpose="",notes="",native_lang=""): _profiles[uid]={"uid":uid,"topik_level":topik,"purpose":purpose,"notes":notes,"native_lang":native_lang}
+
+    def del_user(uid): _users.pop(uid,None); _profiles.pop(uid,None)
+    def del_course(cid):
+        _courses.pop(cid,None)
+        to_del=[k for k,v in _classes.items() if v.get("courseId")==cid]
+        for k in to_del: _classes.pop(k,None)
 
     def set_course(cid,name,tuid=""): _courses[cid]={"courseId":cid,"name":name,"teacherUid":tuid}
     def list_courses(tuid=None):

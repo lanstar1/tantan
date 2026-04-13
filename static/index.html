@@ -350,8 +350,8 @@ async function loadUsers(role){
     const search=document.getElementById(role==='teacher'?'tSrch':'sSrch')?.value||'';
     try{const d=await api(`/api/users?role=${role}&search=${encodeURIComponent(search)}`);
     if(!d.users.length){el.innerHTML='없음';return}
-    let h='<table class="tbl"><tr><th>UID (클릭→복사)</th><th>전화</th><th>닉네임</th></tr>';
-    d.users.forEach(u=>{h+=`<tr><td class="uid" style="cursor:pointer" onclick="navigator.clipboard.writeText('${u.uid}');this.style.color='var(--ok)';setTimeout(()=>this.style.color='',500)" title="클릭하면 복사">${u.uid}</td><td>${u.telephone}</td><td style="color:var(--txb)">${u.nickname}</td></tr>`});
+    let h='<table class="tbl"><tr><th>UID (클릭→복사)</th><th>전화</th><th>닉네임</th><th></th></tr>';
+    d.users.forEach(u=>{h+=`<tr><td class="uid" style="cursor:pointer" onclick="navigator.clipboard.writeText('${u.uid}');this.style.color='var(--ok)';setTimeout(()=>this.style.color='',500)" title="클릭하면 복사">${u.uid}</td><td>${u.telephone}</td><td style="color:var(--txb)">${u.nickname}</td><td><button class="btn btn-d" onclick="delUser('${u.uid}','${role}')">삭제</button></td></tr>`});
     el.innerHTML=h+`</table><div style="font-size:10px;color:var(--tx2);margin-top:4px">총 ${d.total}명</div>`}catch{}
 }
 
@@ -375,7 +375,7 @@ async function createCourse(){try{const d=await api('/api/courses/create','POST'
     if(d.success&&d.courseId){lastCourseId=d.courseId;['clCoId','csCoId','fbCo'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=d.courseId});loadCourses()}}catch(e){sR(document.getElementById('coR'),false,e.message)}}
 async function addCS(){try{const d=await api('/api/courses/add-student','POST',{courseId:document.getElementById('csCoId').value,studentUid:document.getElementById('csSuId').value});sR(document.getElementById('csR'),d.success,d.message)}catch(e){sR(document.getElementById('csR'),false,e.message)}}
 async function loadCourses(){try{const d=await api('/api/courses');const el=document.getElementById('coList');if(!d.courses.length){el.innerHTML='없음';return}
-    let h='<table class="tbl"><tr><th>ID (클릭→복사)</th><th>이름</th><th>강사</th></tr>';d.courses.forEach(c=>{h+=`<tr><td class="uid" style="cursor:pointer" onclick="navigator.clipboard.writeText('${c.courseId}');this.style.color='var(--ok)';setTimeout(()=>this.style.color='',500)">${c.courseId}</td><td style="color:var(--txb)">${c.name}</td><td>${c.teacherUid||'-'}</td></tr>`});el.innerHTML=h+'</table>'}catch{}}
+    let h='<table class="tbl"><tr><th>ID (클릭→복사)</th><th>이름</th><th>강사</th><th></th></tr>';d.courses.forEach(c=>{h+=`<tr><td class="uid" style="cursor:pointer" onclick="navigator.clipboard.writeText('${c.courseId}');this.style.color='var(--ok)';setTimeout(()=>this.style.color='',500)">${c.courseId}</td><td style="color:var(--txb)">${c.name}</td><td>${c.teacherUid||'-'}</td><td><button class="btn btn-d" onclick="delCourse('${c.courseId}')">삭제</button></td></tr>`});el.innerHTML=h+'</table>'}catch{}}
 
 // Classes
 async function createClass(){
@@ -394,8 +394,8 @@ async function getLL(){
 }
 async function loadClasses(){
     try{const d=await api('/api/classes');const el=document.getElementById('clList');if(!d.classes.length){el.innerHTML='없음';return}
-    let h='<table class="tbl"><tr><th>ID</th><th>이름</th><th>시작</th><th>종료</th><th>강사</th></tr>';
-    d.classes.forEach(c=>{h+=`<tr><td class="uid">${c.classId}</td><td style="color:var(--txb)">${c.name}</td><td>${fmtTime(c.begin)}</td><td>${fmtTime(c.end)}</td><td>${c.teacherUid}</td></tr>`});
+    let h='<table class="tbl"><tr><th>ID</th><th>이름</th><th>시작</th><th>종료</th><th>강사</th><th></th></tr>';
+    d.classes.forEach(c=>{h+=`<tr><td class="uid">${c.classId}</td><td style="color:var(--txb)">${c.name}</td><td>${fmtTime(c.begin)}</td><td>${fmtTime(c.end)}</td><td>${c.teacherUid}</td><td><button class="btn btn-d" onclick="delClass('${c.courseId}','${c.classId}')">삭제</button></td></tr>`});
     el.innerHTML=h+'</table>'}catch{}
 }
 
@@ -473,6 +473,15 @@ function checkUpcomingNotif(){
 }
 
 document.getElementById('whUrl').textContent='POST '+window.location.origin+'/api/webhook/classin';
+
+// Delete functions
+async function delUser(uid,role){if(!confirm('UID '+uid+' 삭제?'))return;
+    try{await api('/api/users/'+uid,'DELETE');loadUsers(role)}catch(e){alert(e.message)}}
+async function delCourse(cid){if(!confirm('코스 '+cid+' 삭제? (하위 수업도 삭제됩니다)'))return;
+    try{await api('/api/courses/'+cid,'DELETE');loadCourses()}catch(e){alert(e.message)}}
+async function delClass(coid,clid){if(!confirm('수업 '+clid+' 삭제?'))return;
+    try{await api('/api/classes/delete','POST',{courseId:coid,classId:clid});loadClasses()}catch(e){alert(e.message)}}
+
 checkAuth();
 </script>
 </body>

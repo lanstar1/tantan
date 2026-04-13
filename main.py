@@ -138,6 +138,11 @@ async def list_users(role:Optional[str]=None, search:str="", page:int=1, s=Depen
     users, total = db.list_users(role, search, page)
     return {"users":users,"total":total,"page":page}
 
+@app.delete("/api/users/{uid}")
+async def del_user(uid:str, s=Depends(_admin)):
+    db.del_user(uid)
+    return {"success":True}
+
 # ═══ Student Profiles ════════════════════════════
 @app.get("/api/students/profile/{uid}")
 async def get_profile(uid:str, s=Depends(_auth)):
@@ -154,6 +159,13 @@ async def cr_course(req: CourseIn, s=Depends(_admin)):
     e,err,data=parse_v1(result)
     if e==1: cid=str(data); db.set_course(cid,req.name,req.teacherUid or ""); return {"success":True,"courseId":cid,"raw":result}
     return {"success":False,"message":f"({e}): {err}","raw":result}
+
+@app.delete("/api/courses/{course_id}")
+async def del_course(course_id:str, s=Depends(_admin)):
+    sid,secret=_creds()
+    result = await call_v1("endCourse", sid, secret, {"courseId": course_id})
+    db.del_course(course_id)
+    return {"success":True,"raw":result}
 
 @app.post("/api/classes/create")
 async def cr_class(req: ClassIn_, s=Depends(_admin)):
