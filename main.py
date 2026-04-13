@@ -196,6 +196,31 @@ async def ls_classes(courseId:Optional[str]=None, s=Depends(_auth)):
     tuid = s.get("classInUid") if s["role"]=="teacher" else None
     c=db.list_classes(courseId,tuid); return {"classes":c,"total":len(c)}
 
+# ═══ Availability (Teacher Schedule) ═════════════
+class AvailInput(BaseModel):
+    date: str           # "2026-04-15"
+    startTime: str      # "09:00"
+    endTime: str        # "12:00"
+
+@app.post("/api/availability")
+async def add_avail(req: AvailInput, s=Depends(_auth)):
+    """Teacher adds available time slot"""
+    uid = s.get("classInUid") or s["username"]
+    name = s["displayName"]
+    aid = db.add_availability(uid, name, req.date, req.startTime, req.endTime)
+    return {"success":True,"id":aid}
+
+@app.get("/api/availability")
+async def list_avail(teacherUid:Optional[str]=None, s=Depends(_auth)):
+    """List availability - all teachers or filtered"""
+    a = db.list_availability(teacherUid)
+    return {"slots":a,"total":len(a)}
+
+@app.delete("/api/availability/{aid}")
+async def del_avail(aid:int, s=Depends(_auth)):
+    db.del_availability(aid)
+    return {"success":True}
+
 # ═══ Login Link ══════════════════════════════════
 @app.post("/api/login-link")
 async def login_link(req: LLIn, s=Depends(_auth)):

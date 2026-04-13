@@ -99,6 +99,7 @@ textarea.fi{resize:vertical}
         <div class="ni ao" data-p="students"><span class="ic">👩‍🎓</span>학생 관리</div>
         <div class="nav-lb">수업</div>
         <div class="ni ao" data-p="courses"><span class="ic">📚</span>코스 관리</div>
+        <div class="ni" data-p="availability"><span class="ic">⏰</span>가용시간</div>
         <div class="ni" data-p="calendar"><span class="ic">📅</span>캘린더</div>
         <div class="ni" data-p="classes"><span class="ic">🎥</span>수업/입장</div>
         <div class="nav-lb">데이터</div>
@@ -190,6 +191,24 @@ textarea.fi{resize:vertical}
         <div class="bg"><button class="btn btn-o" onclick="addCS()">배정</button></div>
         <div class="res" id="csR"><span></span><span></span></div></div>
     <div class="cd"><div class="cd-t">📋 목록</div><div id="coList">-</div></div>
+</div>
+
+<!-- Availability -->
+<div class="pg" id="pg-availability">
+    <div class="pg-hd"><h2>가용시간 관리</h2><p>수업 가능한 시간을 등록하면 캘린더에 표시됩니다</p></div>
+    <div class="cd"><div class="cd-t">⏰ 가용시간 등록</div>
+        <div style="font-size:10px;color:var(--tx2);margin-bottom:8px">날짜와 시간을 선택하면 해당 시간에 수업 가능 표시가 캘린더에 초록색으로 나타납니다.</div>
+        <div class="row3">
+            <div class="fg"><label class="fl">날짜</label><input class="fi" id="avDate" type="date"></div>
+            <div class="fg"><label class="fl">시작 시간</label><input class="fi" id="avStart" type="time" value="09:00"></div>
+            <div class="fg"><label class="fl">종료 시간</label><input class="fi" id="avEnd" type="time" value="12:00"></div>
+        </div>
+        <div class="bg"><button class="btn btn-p" onclick="addAvail()">✅ 가용시간 등록</button></div>
+        <div class="res" id="avR"><span></span><span></span></div>
+    </div>
+    <div class="cd"><div class="cd-t">📋 내 가용시간 목록 <button class="btn btn-o" style="margin-left:auto;padding:3px 8px;font-size:10px" onclick="loadAvail()">새로고침</button></div>
+        <div id="avList" style="font-size:12px">-</div>
+    </div>
 </div>
 
 <!-- Calendar -->
@@ -307,6 +326,7 @@ document.querySelectorAll('.ni').forEach(n=>n.addEventListener('click',()=>{
     if(p==='dashboard')loadDash();if(p==='teachers')loadUsers('teacher');if(p==='students')loadUsers('student');
     if(p==='courses')loadCourses();if(p==='classes')loadClasses();if(p==='webhooks')loadWH();
     if(p==='feedback')loadFB();if(p==='accounts')loadAccounts();if(p==='calendar')renderCalendar();
+    if(p==='availability')loadAvail();
 }));
 
 // Settings
@@ -399,17 +419,43 @@ async function loadClasses(){
     el.innerHTML=h+'</table>'}catch{}
 }
 
-// Calendar
+// Calendar - shows availability (green) + classes (blue)
 async function renderCalendar(){
-    try{const d=await api('/api/classes');
-    const events=d.classes.map(c=>({title:c.name,start:new Date(c.begin*1000).toISOString(),end:new Date(c.end*1000).toISOString(),color:'#4f8cff'}));
-    if(calendar)calendar.destroy();
-    calendar=new FullCalendar.Calendar(document.getElementById('cal'),{
-        initialView:'dayGridMonth',locale:'ko',height:'auto',timeZone:MY_TZ,
-        headerToolbar:{left:'prev,next today',center:'title',right:'dayGridMonth,timeGridWeek'},
-        events,eventClick:info=>alert(`${info.event.title}\n${info.event.start.toLocaleString('ko-KR',{timeZone:MY_TZ})}`)
-    });calendar.render()}catch{}
+    try{
+        const [cls, avail] = await Promise.all([api('/api/classes'), api('/api/availability')]);
+        const events=[];
+        // Classes = blue
+        cls.classes.forEach(c=>events.push({title:'📚 '+c.name,start:new Date(c.begin*1000).toISOString(),end:new Date(c.end*1000).toISOString(),color:'#4f8cff',extendedProps:{type:'class'}}));
+        // Availability = green
+        avail.slots.forEach(a=>events.push({title:'✅ '+a.teacherName+' 가용',start:a.date+'T'+a.startTime,end:a.date+'T'+a.endTime,color:'#34d399',extendedProps:{type:'avail',id:a.id}}));
+        if(calendar)calendar.destroy();
+        calendar=new FullCalendar.Calendar(document.getElementById('cal'),{
+            initialView:'timeGridWeek',locale:'ko',height:'auto',timeZone:MY_TZ,slotMinTime:'06:00:00',slotMaxTime:'23:00:00',
+            headerToolbar:{left:'prev,next today',center:'title',right:'dayGridMonth,timeGridWeek'},
+            events,eventClick:info=>{
+                const p=info.event.extendedProps;
+                if(p.type==='class')alert(`수업: ${info.event.title}\n${info.event.start.toLocaleString('ko-KR',{timeZone:MY_TZ})}`);
+                else if(p.type==='avail')alert(`가용시간: ${info.event.title}\n${info.event.start.toLocaleString('ko-KR',{timeZone:MY_TZ})}`);
+            }
+        });calendar.render()}catch{}
 }
+
+// Availability
+async function addAvail(){
+    const dt=document.getElementById('avDate').value, st=document.getElementById('avStart').value, et=document.getElementById('avEnd').value;
+    if(!dt||!st||!et)return alert('날짜, 시작, 종료 시간 모두 입력');
+    try{const d=await api('/api/availability','POST',{date:dt,startTime:st,endTime:et});
+    sR(document.getElementById('avR'),d.success,'등록 완료 (ID:'+d.id+')');loadAvail()}catch(e){sR(document.getElementById('avR'),false,e.message)}
+}
+async function loadAvail(){
+    try{const d=await api('/api/availability');const el=document.getElementById('avList');
+    if(!d.slots.length){el.innerHTML='등록된 가용시간 없음';return}
+    let h='<table class="tbl"><tr><th>날짜</th><th>시작</th><th>종료</th><th>강사</th><th>상태</th><th></th></tr>';
+    d.slots.forEach(a=>{h+=`<tr><td style="color:var(--txb)">${a.date}</td><td>${a.startTime}</td><td>${a.endTime}</td><td>${a.teacherName}</td><td style="color:${a.status==='available'?'var(--ok)':'var(--ac)'}">● ${a.status==='available'?'가용':'예약됨'}</td><td><button class="btn btn-d" onclick="delAvail(${a.id})">삭제</button></td></tr>`});
+    el.innerHTML=h+'</table><div style="font-size:10px;color:var(--tx2);margin-top:4px">총 '+d.total+'건</div>'}catch{}
+}
+async function delAvail(id){if(!confirm('가용시간 삭제?'))return;
+    try{await api('/api/availability/'+id,'DELETE');loadAvail()}catch(e){alert(e.message)}}
 
 // Webhooks
 async function loadWH(){try{const d=await api('/api/webhooks?limit=30');const el=document.getElementById('whList');if(!d.webhooks.length){el.innerHTML='없음';return}

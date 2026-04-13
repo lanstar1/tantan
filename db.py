@@ -40,6 +40,10 @@ if DB_URL:
             cur.execute("""CREATE TABLE IF NOT EXISTS feedbacks (
                 id SERIAL PRIMARY KEY, course_id TEXT, class_id TEXT,
                 teacher_uid TEXT, student_uid TEXT, comment TEXT, created_at TIMESTAMPTZ DEFAULT NOW())""")
+            cur.execute("""CREATE TABLE IF NOT EXISTS availability (
+                id SERIAL PRIMARY KEY, teacher_uid TEXT NOT NULL, teacher_name TEXT DEFAULT '',
+                slot_date DATE NOT NULL, start_time TEXT NOT NULL, end_time TEXT NOT NULL,
+                status TEXT DEFAULT 'available', created_at TIMESTAMPTZ DEFAULT NOW())""")
             c.commit()
 
     # Credentials
@@ -194,6 +198,26 @@ if DB_URL:
             return [{"courseId":r["course_id"],"classId":r["class_id"],"teacherUid":r["teacher_uid"],
                      "studentUid":r["student_uid"],"comment":r["comment"],"date":str(r["created_at"])} for r in cur.fetchall()]
 
+    # Availability
+    def add_availability(teacher_uid, teacher_name, slot_date, start_time, end_time):
+        with _conn() as c:
+            cur=c.cursor(); cur.execute("INSERT INTO availability(teacher_uid,teacher_name,slot_date,start_time,end_time)VALUES(%s,%s,%s,%s,%s) RETURNING id",
+                (teacher_uid,teacher_name,slot_date,start_time,end_time)); aid=cur.fetchone()["id"]; c.commit(); return aid
+    def list_availability(teacher_uid=None):
+        with _conn() as c:
+            cur=c.cursor()
+            if teacher_uid: cur.execute("SELECT * FROM availability WHERE teacher_uid=%s ORDER BY slot_date,start_time",(teacher_uid,))
+            else: cur.execute("SELECT * FROM availability ORDER BY slot_date,start_time")
+            return [{"id":r["id"],"teacherUid":r["teacher_uid"],"teacherName":r["teacher_name"],
+                     "date":str(r["slot_date"]),"startTime":r["start_time"],"endTime":r["end_time"],
+                     "status":r["status"]} for r in cur.fetchall()]
+    def del_availability(aid):
+        with _conn() as c:
+            c.cursor().execute("DELETE FROM availability WHERE id=%s",(aid,)); c.commit()
+    def update_availability_status(aid, status):
+        with _conn() as c:
+            c.cursor().execute("UPDATE availability SET status=%s WHERE id=%s",(status,aid)); c.commit()
+
     def count_all():
         with _conn() as c:
             cur=c.cursor(); d={}
@@ -206,7 +230,7 @@ if DB_URL:
 else:
     # ── In-memory fallback ──
     _accounts={}; _creds_store={"sid":None,"secret":None}; _users={}; _courses={}; _classes={}
-    _webhooks=[]; _feedbacks=[]; _sessions={}; _profiles={}
+    _webhooks=[]; _feedbacks=[]; _sessions={}; _profiles={}; _avail=[]; _avail_counter=[0]
 
     def init_db(): pass
     def get_creds(): return _creds_store["sid"],_creds_store["secret"]
@@ -277,6 +301,19 @@ else:
         _feedbacks.append({"courseId":coid,"classId":clid,"teacherUid":tuid,"studentUid":suid,"comment":comment,"date":datetime.now().isoformat()})
     def list_feedbacks(tuid=None):
         f=_feedbacks; return [x for x in f if x["teacherUid"]==tuid] if tuid else f
+
+    def add_availability(teacher_uid, teacher_name, slot_date, start_time, end_time):
+        _avail_counter[0]+=1; aid=_avail_counter[0]
+        _avail.append({"id":aid,"teacherUid":teacher_uid,"teacherName":teacher_name,
+                       "date":slot_date,"startTime":start_time,"endTime":end_time,"status":"available"})
+        return aid
+    def list_availability(teacher_uid=None):
+        a=_avail; return [x for x in a if x["teacherUid"]==teacher_uid] if teacher_uid else a
+    def del_availability(aid):
+        _avail[:]=[x for x in _avail if x["id"]!=aid]
+    def update_availability_status(aid, status):
+        for a in _avail:
+            if a["id"]==aid: a["status"]=status
 
     def count_all():
         return {"teachers":len([u for u in _users.values() if u["role"]=="teacher"]),
