@@ -178,12 +178,14 @@ textarea.fi{resize:vertical}
 
 <!-- Courses -->
 <div class="pg" id="pg-courses">
-    <div class="pg-hd"><h2>코스 관리</h2></div>
+    <div class="pg-hd"><h2>코스 관리</h2><p>강사 등록 후 → 코스 생성 → 학생 배정 순서로 진행</p></div>
     <div class="cd"><div class="cd-t">➕ 코스 생성</div>
+        <div style="font-size:10px;color:var(--tx2);margin-bottom:8px">강사 UID는 강사 관리에서 등록 후 자동 입력됩니다. 수동 입력도 가능.</div>
         <div class="row"><div class="fg"><label class="fl">이름</label><input class="fi" id="coNm"></div><div class="fg"><label class="fl">담당 강사 UID</label><input class="fi" id="coTu"></div></div>
         <div class="bg"><button class="btn btn-p" onclick="createCourse()">생성</button></div>
         <div class="res" id="coR"><span></span><span></span><div class="rj"></div></div></div>
     <div class="cd"><div class="cd-t">🔗 학생 배정</div>
+        <div style="font-size:10px;color:var(--tx2);margin-bottom:8px">코스에 학생을 배정하면 해당 코스의 모든 수업에 참여 가능합니다.</div>
         <div class="row"><div class="fg"><label class="fl">코스 ID</label><input class="fi" id="csCoId"></div><div class="fg"><label class="fl">학생 UID</label><input class="fi" id="csSuId"></div></div>
         <div class="bg"><button class="btn btn-o" onclick="addCS()">배정</button></div>
         <div class="res" id="csR"><span></span><span></span></div></div>
@@ -200,6 +202,7 @@ textarea.fi{resize:vertical}
 <div class="pg" id="pg-classes">
     <div class="pg-hd"><h2>수업/입장</h2></div>
     <div class="cd ao"><div class="cd-t">➕ 수업 생성</div>
+        <div style="font-size:10px;color:var(--tx2);margin-bottom:8px">코스 생성 후 → 코스 ID가 자동 입력됩니다. 시작/종료는 현지 시간 기준.</div>
         <div class="row"><div class="fg"><label class="fl">코스 ID</label><input class="fi" id="clCoId"></div><div class="fg"><label class="fl">수업명</label><input class="fi" id="clNm"></div></div>
         <div class="row3"><div class="fg"><label class="fl">시작</label><input class="fi" id="clBeg" type="datetime-local"></div><div class="fg"><label class="fl">종료</label><input class="fi" id="clEnd" type="datetime-local"></div><div class="fg"><label class="fl">강사 UID</label><input class="fi" id="clTu"></div></div>
         <div class="bg"><button class="btn btn-p" onclick="createClass()">생성</button></div>
@@ -329,20 +332,26 @@ async function loadAccounts(){
 }
 async function delAc(u){if(!confirm(u+' 삭제?'))return;try{await api('/api/admin/accounts/'+u,'DELETE');loadAccounts()}catch(e){alert(e.message)}}
 
-// Users
+// Users - with auto-fill to other forms
+let lastTeacherUid='', lastStudentUid='', lastCourseId='';
 async function regUser(role){
     const p=role==='teacher'?'t':'s';
     try{const d=await api('/api/users/register','POST',{telephone:document.getElementById(p+'Ph').value,password:document.getElementById(p+'Pw').value,
         nickname:document.getElementById(p+'Nk').value,role});
-    sR(document.getElementById(p+'R'),d.success,(d.uid?'UID:'+d.uid:'')+(d.message||''),d.raw);if(d.success)loadUsers(role)}catch(e){sR(document.getElementById(p+'R'),false,e.message)}
+    sR(document.getElementById(p+'R'),d.success,(d.uid?'UID:'+d.uid:'')+(d.message||''),d.raw);
+    if(d.success&&d.uid){
+        if(role==='teacher'){lastTeacherUid=d.uid;['coTu','clTu','llUid','fbTu','stTu'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=d.uid})}
+        else{lastStudentUid=d.uid;['csSuId','fbSu','spUid'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=d.uid})}
+        loadUsers(role);
+    }}catch(e){sR(document.getElementById(p+'R'),false,e.message)}
 }
 async function loadUsers(role){
     const el=document.getElementById(role==='teacher'?'tList':'sList');
     const search=document.getElementById(role==='teacher'?'tSrch':'sSrch')?.value||'';
     try{const d=await api(`/api/users?role=${role}&search=${encodeURIComponent(search)}`);
     if(!d.users.length){el.innerHTML='없음';return}
-    let h='<table class="tbl"><tr><th>UID</th><th>전화</th><th>닉네임</th></tr>';
-    d.users.forEach(u=>{h+=`<tr><td class="uid">${u.uid}</td><td>${u.telephone}</td><td style="color:var(--txb)">${u.nickname}</td></tr>`});
+    let h='<table class="tbl"><tr><th>UID (클릭→복사)</th><th>전화</th><th>닉네임</th></tr>';
+    d.users.forEach(u=>{h+=`<tr><td class="uid" style="cursor:pointer" onclick="navigator.clipboard.writeText('${u.uid}');this.style.color='var(--ok)';setTimeout(()=>this.style.color='',500)" title="클릭하면 복사">${u.uid}</td><td>${u.telephone}</td><td style="color:var(--txb)">${u.nickname}</td></tr>`});
     el.innerHTML=h+`</table><div style="font-size:10px;color:var(--tx2);margin-top:4px">총 ${d.total}명</div>`}catch{}
 }
 
@@ -361,10 +370,12 @@ async function saveProfile(){
 }
 
 // Courses
-async function createCourse(){try{const d=await api('/api/courses/create','POST',{name:document.getElementById('coNm').value,teacherUid:document.getElementById('coTu').value||null});sR(document.getElementById('coR'),d.success,d.courseId?'ID:'+d.courseId:'',d.raw);if(d.success)loadCourses()}catch(e){sR(document.getElementById('coR'),false,e.message)}}
+async function createCourse(){try{const d=await api('/api/courses/create','POST',{name:document.getElementById('coNm').value,teacherUid:document.getElementById('coTu').value||null});
+    sR(document.getElementById('coR'),d.success,d.courseId?'코스 ID: '+d.courseId+' (수업생성/학생배정에 자동 입력됨)':'',d.raw);
+    if(d.success&&d.courseId){lastCourseId=d.courseId;['clCoId','csCoId','fbCo'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=d.courseId});loadCourses()}}catch(e){sR(document.getElementById('coR'),false,e.message)}}
 async function addCS(){try{const d=await api('/api/courses/add-student','POST',{courseId:document.getElementById('csCoId').value,studentUid:document.getElementById('csSuId').value});sR(document.getElementById('csR'),d.success,d.message)}catch(e){sR(document.getElementById('csR'),false,e.message)}}
 async function loadCourses(){try{const d=await api('/api/courses');const el=document.getElementById('coList');if(!d.courses.length){el.innerHTML='없음';return}
-    let h='<table class="tbl"><tr><th>ID</th><th>이름</th><th>강사</th></tr>';d.courses.forEach(c=>{h+=`<tr><td class="uid">${c.courseId}</td><td style="color:var(--txb)">${c.name}</td><td>${c.teacherUid||'-'}</td></tr>`});el.innerHTML=h+'</table>'}catch{}}
+    let h='<table class="tbl"><tr><th>ID (클릭→복사)</th><th>이름</th><th>강사</th></tr>';d.courses.forEach(c=>{h+=`<tr><td class="uid" style="cursor:pointer" onclick="navigator.clipboard.writeText('${c.courseId}');this.style.color='var(--ok)';setTimeout(()=>this.style.color='',500)">${c.courseId}</td><td style="color:var(--txb)">${c.name}</td><td>${c.teacherUid||'-'}</td></tr>`});el.innerHTML=h+'</table>'}catch{}}
 
 // Classes
 async function createClass(){
@@ -372,7 +383,8 @@ async function createClass(){
         b=document.getElementById('clBeg').value,e=document.getElementById('clEnd').value,tu=document.getElementById('clTu').value;
     if(!co||!nm||!b||!e||!tu)return alert('모든 필드 필수');
     try{const d=await api('/api/classes/create','POST',{courseId:co,className:nm,beginTime:Math.floor(new Date(b)/1000),endTime:Math.floor(new Date(e)/1000),teacherUid:tu});
-    sR(document.getElementById('clR'),d.success,d.classId?'ID:'+d.classId:'',d.raw);if(d.success)loadClasses()}catch(e){sR(document.getElementById('clR'),false,e.message)}
+    sR(document.getElementById('clR'),d.success,d.classId?'수업 ID: '+d.classId:'',d.raw);
+    if(d.success){if(d.classId)document.getElementById('fbCl').value=d.classId;loadClasses()}}catch(e){sR(document.getElementById('clR'),false,e.message)}
 }
 async function getLL(){
     const uid=document.getElementById('llUid').value;if(!uid)return;
