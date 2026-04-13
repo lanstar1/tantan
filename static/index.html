@@ -414,8 +414,8 @@ async function getLL(){
 }
 async function loadClasses(){
     try{const d=await api('/api/classes');const el=document.getElementById('clList');if(!d.classes.length){el.innerHTML='없음';return}
-    let h='<table class="tbl"><tr><th>ID</th><th>이름</th><th>시작</th><th>종료</th><th>강사</th><th></th></tr>';
-    d.classes.forEach(c=>{h+=`<tr><td class="uid">${c.classId}</td><td style="color:var(--txb)">${c.name}</td><td>${fmtTime(c.begin)}</td><td>${fmtTime(c.end)}</td><td>${c.teacherUid}</td><td><button class="btn btn-d" onclick="delClass('${c.courseId}','${c.classId}')">삭제</button></td></tr>`});
+    let h='<table class="tbl"><tr><th>ID</th><th>이름</th><th>시작</th><th>종료</th><th>강사</th><th></th><th></th></tr>';
+    d.classes.forEach(c=>{h+=`<tr><td class="uid">${c.classId}</td><td style="color:var(--txb)">${c.name}</td><td>${fmtTime(c.begin)}</td><td>${fmtTime(c.end)}</td><td>${c.teacherUid}</td><td><button class="btn btn-s" style="font-size:10px;padding:3px 8px" onclick="document.getElementById('llUid').value='${c.teacherUid}';getLL()">🚀 입장</button></td><td><button class="btn btn-d" onclick="delClass('${c.courseId}','${c.classId}')">삭제</button></td></tr>`});
     el.innerHTML=h+'</table>'}catch{}
 }
 
@@ -425,17 +425,40 @@ async function renderCalendar(){
         const [cls, avail] = await Promise.all([api('/api/classes'), api('/api/availability')]);
         const events=[];
         // Classes = blue
-        cls.classes.forEach(c=>events.push({title:'📚 '+c.name,start:new Date(c.begin*1000).toISOString(),end:new Date(c.end*1000).toISOString(),color:'#4f8cff',extendedProps:{type:'class'}}));
+        cls.classes.forEach(c=>events.push({title:'📚 '+c.name,start:new Date(c.begin*1000).toISOString(),end:new Date(c.end*1000).toISOString(),color:'#4f8cff',
+            extendedProps:{type:'class',classId:c.classId,courseId:c.courseId,teacherUid:c.teacherUid}}));
         // Availability = green
-        avail.slots.forEach(a=>events.push({title:'✅ '+a.teacherName+' 가용',start:a.date+'T'+a.startTime,end:a.date+'T'+a.endTime,color:'#34d399',extendedProps:{type:'avail',id:a.id}}));
+        avail.slots.forEach(a=>{if(a.status==='available')events.push({title:'✅ '+a.teacherName,start:a.date+'T'+a.startTime,end:a.date+'T'+a.endTime,color:'#34d399',
+            extendedProps:{type:'avail',id:a.id,teacherUid:a.teacherUid,teacherName:a.teacherName,date:a.date,st:a.startTime,et:a.endTime}})});
         if(calendar)calendar.destroy();
         calendar=new FullCalendar.Calendar(document.getElementById('cal'),{
             initialView:'timeGridWeek',locale:'ko',height:'auto',timeZone:MY_TZ,slotMinTime:'06:00:00',slotMaxTime:'23:00:00',
             headerToolbar:{left:'prev,next today',center:'title',right:'dayGridMonth,timeGridWeek'},
             events,eventClick:info=>{
                 const p=info.event.extendedProps;
-                if(p.type==='class')alert(`수업: ${info.event.title}\n${info.event.start.toLocaleString('ko-KR',{timeZone:MY_TZ})}`);
-                else if(p.type==='avail')alert(`가용시간: ${info.event.title}\n${info.event.start.toLocaleString('ko-KR',{timeZone:MY_TZ})}`);
+                if(p.type==='class'){
+                    if(confirm(`📚 ${info.event.title}\n${info.event.start.toLocaleString('ko-KR',{timeZone:MY_TZ})}\n\n입장 링크를 생성하시겠습니까?`)){
+                        document.getElementById('llUid').value=p.teacherUid;
+                        document.querySelectorAll('.ni').forEach(x=>x.classList.remove('on'));
+                        document.querySelector('[data-p=classes]').classList.add('on');
+                        document.querySelectorAll('.pg').forEach(x=>x.classList.remove('on'));
+                        document.getElementById('pg-classes').classList.add('on');
+                        getLL();
+                    }
+                }else if(p.type==='avail' && ROLE==='admin'){
+                    if(confirm(`✅ ${p.teacherName} 가용시간\n${p.date} ${p.st}~${p.et}\n\n이 시간에 수업을 생성하시겠습니까?`)){
+                        document.getElementById('clCoId').focus();
+                        document.getElementById('clTu').value=p.teacherUid;
+                        const begDT=p.date+'T'+p.st;
+                        const endDT=p.date+'T'+p.et;
+                        document.getElementById('clBeg').value=begDT;
+                        document.getElementById('clEnd').value=endDT;
+                        document.querySelectorAll('.ni').forEach(x=>x.classList.remove('on'));
+                        document.querySelector('[data-p=classes]').classList.add('on');
+                        document.querySelectorAll('.pg').forEach(x=>x.classList.remove('on'));
+                        document.getElementById('pg-classes').classList.add('on');
+                    }
+                }
             }
         });calendar.render()}catch{}
 }
