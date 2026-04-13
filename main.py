@@ -394,5 +394,8 @@ async def income(s=Depends(_auth)):
 
 # ═══ Static ══════════════════════════════════════
 app.mount("/static", StaticFiles(directory="static"), name="static")
+@app.get("/favicon.ico")
+async def favicon(): return FileResponse("static/favicon.ico") if __import__("os").path.exists("static/favicon.ico") else JSONResponse(status_code=204,content=None)
+
 @app.get("/")
 async def index(): return FileResponse("static/index.html")
