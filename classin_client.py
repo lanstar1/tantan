@@ -32,7 +32,7 @@ async def call_v2(endpoint, sid, secret, body=None):
         try: return r.json()
         except: return {"code": -1, "msg": f"HTTP {r.status_code}"}
 
-def parse_v1(result):
+def parse_v1_raw(result):
     ei = result.get("error_info", {})
     return ei.get("errno", 0), ei.get("error", ""), result.get("data")
 
@@ -79,3 +79,40 @@ async def get_cloud_list(sid, secret, folder_id): return await call_v1("getCloud
 
 # Webhook
 def verify_webhook_safe_key(secret, ts, sk): return hashlib.md5(f"{secret}{ts}".encode()).hexdigest() == sk
+
+# Chinese → Korean error translation
+ERROR_KR = {
+    "参数不全或错误": "파라미터 불완전 또는 오류",
+    "无权限": "권한 없음 (SID/SECRET 확인)",
+    "手机号码不合法": "전화번호 형식 오류 (00국가코드-번호)",
+    "密码长度不合法（6-20位）": "비밀번호 6~20자 필요",
+    "密码长度不合法": "비밀번호 6~20자 필요",
+    "程序正常执行": "정상 처리",
+    "该手机号已注册": "이미 등록된 전화번호",
+    "该邮箱已注册": "이미 등록된 이메일",
+    "用户不存在": "사용자 없음",
+    "课程不存在": "코스 없음",
+    "课程已结束": "코스 종료됨",
+    "课节不存在": "수업 없음",
+    "该学生已在课程中": "이미 배정된 학생",
+    "该教师已在课程中": "이미 배정된 강사",
+    "该用户不是机构的老师": "해당 사용자는 학교 강사가 아닙니다",
+    "该用户不是机构的学生": "해당 사용자는 학교 학생이 아닙니다",
+    "台上人数参数错误": "좌석 수 파라미터 오류",
+    "safeKey错误": "인증키(safeKey) 오류",
+    "时间戳过期": "타임스탬프 만료",
+    "SID不存在": "SID 없음",
+    "课程名不能为空": "코스 이름 필수",
+    "上课时间不能早于当前时间": "수업 시작은 현재 시간 이후여야 합니다",
+    "上课时间必须早于下课时间": "시작 시간이 종료 시간보다 앞이어야 합니다",
+}
+
+def translate_error(msg):
+    if not msg: return msg
+    for cn, kr in ERROR_KR.items():
+        if cn in msg: return msg.replace(cn, kr)
+    return msg
+
+def parse_v1(result):
+    e, err, data = parse_v1_raw(result)
+    return e, translate_error(err), data
