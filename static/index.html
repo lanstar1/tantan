@@ -105,8 +105,13 @@ textarea.fi{resize:vertical}
         <div class="nav-lb">데이터</div>
         <div class="ni ao" data-p="webhooks"><span class="ic">🔔</span>웹훅</div>
         <div class="ni" data-p="materials"><span class="ic">📁</span>자료실</div>
-        <div class="ni" data-p="feedback"><span class="ic">📝</span>피드백</div>
-        <div class="ni" data-p="settlement"><span class="ic">💰</span>정산</div>
+        <div class="ni" data-p="feedback"><span class="ic">📝</span>피드백/별점</div>
+        <div class="ni" data-p="settlement"><span class="ic">💰</span>정산/수입</div>
+        <div class="ni" data-p="absences"><span class="ic">🚫</span>결석 증빙</div>
+        <div class="nav-lb">소통</div>
+        <div class="ni" data-p="myprofile"><span class="ic">🪪</span>내 프로필</div>
+        <div class="ni" data-p="announcements"><span class="ic">📢</span>공지사항</div>
+        <div class="ni" data-p="inquiries"><span class="ic">💬</span>1:1 문의</div>
     </div>
     <div class="side-ft"><div class="ui"><span>👤 <span id="uDisp">-</span> <span class="rb" id="uRole">-</span></span><span class="lo" onclick="doLogout()">로그아웃</span></div>
     <div style="margin-top:4px;font-size:9px;color:var(--tx2)" id="tzDisp"></div></div>
@@ -247,25 +252,80 @@ textarea.fi{resize:vertical}
         <div id="cloudList" style="margin-top:10px;font-size:12px;color:var(--tx2)">-</div></div>
 </div>
 
-<!-- Feedback -->
+<!-- Feedback + Ratings -->
 <div class="pg" id="pg-feedback">
-    <div class="pg-hd"><h2>피드백</h2></div>
-    <div class="cd"><div class="cd-t">✍️ 작성</div>
+    <div class="pg-hd"><h2>피드백/별점</h2><p>수업 피드백 및 만족도 평가</p></div>
+    <div class="cd"><div class="cd-t">✍️ 피드백 작성</div>
         <div class="row"><div class="fg"><label class="fl">코스 ID</label><input class="fi" id="fbCo"></div><div class="fg"><label class="fl">수업 ID</label><input class="fi" id="fbCl"></div></div>
         <div class="row"><div class="fg"><label class="fl">강사 UID</label><input class="fi" id="fbTu"></div><div class="fg"><label class="fl">학생 UID</label><input class="fi" id="fbSu"></div></div>
         <div class="fg"><label class="fl">피드백</label><textarea class="fi" id="fbCm" rows="3"></textarea></div>
         <div class="bg"><button class="btn btn-p" onclick="submitFB()">제출</button></div>
         <div class="res" id="fbR"><span></span><span></span></div></div>
-    <div class="cd"><div class="cd-t">📋 내역</div><div id="fbList">-</div></div>
+    <div class="cd"><div class="cd-t">⭐ 수업 별점/리뷰</div>
+        <div class="row3"><div class="fg"><label class="fl">수업 ID</label><input class="fi" id="rtClId"></div><div class="fg"><label class="fl">강사 UID</label><input class="fi" id="rtTuId"></div>
+        <div class="fg"><label class="fl">별점 (1~5)</label><select class="fi" id="rtScore"><option>5</option><option>4</option><option>3</option><option>2</option><option>1</option></select></div></div>
+        <div class="fg"><label class="fl">리뷰</label><input class="fi" id="rtReview" placeholder="수업 후기"></div>
+        <div class="bg"><button class="btn btn-p" onclick="addRating()">⭐ 별점 등록</button></div>
+        <div class="res" id="rtR"><span></span><span></span></div></div>
+    <div class="cd"><div class="cd-t">📋 피드백 내역</div><div id="fbList">-</div></div>
+    <div class="cd"><div class="cd-t">⭐ 별점 내역</div><div id="rtList">-</div></div>
 </div>
 
-<!-- Settlement -->
+<!-- Settlement with Income -->
 <div class="pg" id="pg-settlement">
-    <div class="pg-hd"><h2>정산</h2></div>
-    <div class="cd"><div class="cd-t">💰 조회</div>
-        <div class="row"><div class="fg"><label class="fl">강사 UID</label><input class="fi" id="stTu"></div>
-        <div class="fg" style="display:flex;align-items:flex-end;gap:6px"><button class="btn btn-p" onclick="loadST()">조회</button><button class="btn btn-o" onclick="exportCSV()">📥 CSV 다운로드</button></div></div>
-        <div id="stResult"></div></div>
+    <div class="pg-hd"><h2>정산/수입</h2><p>수업 시수 및 수입 집계</p></div>
+    <div class="cd"><div class="cd-t">💰 수입 대시보드</div>
+        <div id="incomeResult" style="font-size:12px;color:var(--tx2)">조회 버튼을 누르세요</div>
+        <div class="bg"><button class="btn btn-p" onclick="loadIncome()">📊 수입 조회</button><button class="btn btn-o" onclick="exportCSV()">📥 CSV</button></div>
+    </div>
+    <div class="cd"><div class="cd-t">⭐ 수업 평가 통계</div><div id="statsResult">-</div>
+        <div class="bg"><button class="btn btn-o" onclick="loadTeacherStats()">통계 조회</button></div></div>
+</div>
+
+<!-- Absences -->
+<div class="pg" id="pg-absences">
+    <div class="pg-hd"><h2>결석 증빙</h2><p>결석 사유 및 증빙 기록</p></div>
+    <div class="cd"><div class="cd-t">🚫 결석 등록</div>
+        <div class="row"><div class="fg"><label class="fl">수업 ID</label><input class="fi" id="absClId"></div><div class="fg"><label class="fl">사유</label><input class="fi" id="absReason" placeholder="결석 사유 입력"></div></div>
+        <div class="fg"><label class="fl">증빙 이미지 URL (선택)</label><input class="fi" id="absPhoto" placeholder="https://..."></div>
+        <div class="bg"><button class="btn btn-p" onclick="addAbsence()">등록</button></div>
+        <div class="res" id="absR"><span></span><span></span></div></div>
+    <div class="cd"><div class="cd-t">📋 결석 내역</div><div id="absList">-</div></div>
+</div>
+
+<!-- My Profile (Teacher) -->
+<div class="pg" id="pg-myprofile">
+    <div class="pg-hd"><h2>내 프로필</h2><p>자기소개, 경력, 자격증, 시급 설정</p></div>
+    <div class="cd"><div class="cd-t">🪪 프로필 편집</div>
+        <div class="fg"><label class="fl">자기소개</label><textarea class="fi" id="mpBio" rows="2" placeholder="간단한 자기소개"></textarea></div>
+        <div class="row"><div class="fg"><label class="fl">경력</label><input class="fi" id="mpCareer" placeholder="한국어 교육 5년"></div><div class="fg"><label class="fl">시급 (원)</label><input class="fi" id="mpRate" type="number" placeholder="30000"></div></div>
+        <div class="fg"><label class="fl">자격증/증빙</label><input class="fi" id="mpCerts" placeholder="한국어교원 2급, TOPIK 지도사"></div>
+        <div class="row"><div class="fg"><label class="fl">소개 영상 URL</label><input class="fi" id="mpVideo" placeholder="https://youtube.com/..."></div><div class="fg"><label class="fl">프로필 사진 URL</label><input class="fi" id="mpPhoto" placeholder="https://..."></div></div>
+        <div class="bg"><button class="btn btn-p" onclick="saveMyProfile()">저장</button></div>
+        <div class="res" id="mpR"><span></span><span></span></div></div>
+</div>
+
+<!-- Announcements -->
+<div class="pg" id="pg-announcements">
+    <div class="pg-hd"><h2>공지사항</h2><p>운영사 가이드라인 및 공지</p></div>
+    <div class="cd ao"><div class="cd-t">➕ 공지 작성 (관리자)</div>
+        <div class="fg"><label class="fl">제목</label><input class="fi" id="annTitle"></div>
+        <div class="fg"><label class="fl">내용</label><textarea class="fi" id="annContent" rows="3"></textarea></div>
+        <div class="bg"><button class="btn btn-p" onclick="addAnn()">게시</button></div>
+        <div class="res" id="annR"><span></span><span></span></div></div>
+    <div class="cd"><div class="cd-t">📋 공지 목록</div><div id="annList">-</div></div>
+</div>
+
+<!-- Inquiries -->
+<div class="pg" id="pg-inquiries">
+    <div class="pg-hd"><h2>1:1 문의</h2><p>운영진에게 문의합니다</p></div>
+    <div class="cd"><div class="cd-t">💬 문의 작성</div>
+        <div class="fg"><label class="fl">제목</label><input class="fi" id="inqSubj"></div>
+        <div class="fg"><label class="fl">내용</label><textarea class="fi" id="inqContent" rows="3" placeholder="시스템 오류, 학생 문제 등"></textarea></div>
+        <div class="bg"><button class="btn btn-p" onclick="addInq()">문의 보내기</button></div>
+        <div class="res" id="inqR"><span></span><span></span></div></div>
+    <div class="cd ao"><div class="cd-t">📋 전체 문의 (관리자)</div><div id="inqListAdmin">-</div></div>
+    <div class="cd"><div class="cd-t">📋 내 문의 내역</div><div id="inqList">-</div></div>
 </div>
 
 </main>
@@ -294,7 +354,7 @@ function showApp(){
     document.getElementById('uDisp').textContent=MY_NAME;document.getElementById('uRole').textContent=ROLE==='admin'?'관리자':'강사';
     document.getElementById('tzDisp').textContent='🕐 '+MY_TZ;
     document.querySelectorAll('.ao').forEach(e=>e.style.display=ROLE==='admin'?'':'none');
-    if(ROLE==='teacher'&&MY_UID){['fbTu','llUid','stTu','clTu'].forEach(id=>{const e=document.getElementById(id);if(e&&!e.value)e.value=MY_UID})}
+    if(ROLE==='teacher'&&MY_UID){['fbTu','llUid','clTu'].forEach(id=>{const e=document.getElementById(id);if(e&&!e.value)e.value=MY_UID})}
     loadDash();
 }
 async function checkAuth(){
@@ -325,8 +385,9 @@ document.querySelectorAll('.ni').forEach(n=>n.addEventListener('click',()=>{
     const p=n.dataset.p;
     if(p==='dashboard')loadDash();if(p==='teachers')loadUsers('teacher');if(p==='students')loadUsers('student');
     if(p==='courses')loadCourses();if(p==='classes')loadClasses();if(p==='webhooks')loadWH();
-    if(p==='feedback')loadFB();if(p==='accounts')loadAccounts();if(p==='calendar')renderCalendar();
-    if(p==='availability')loadAvail();
+    if(p==='feedback'){loadFB();loadRatings();}if(p==='accounts')loadAccounts();if(p==='calendar')renderCalendar();
+    if(p==='availability')loadAvail();if(p==='absences')loadAbsences();
+    if(p==='myprofile')loadMyProfile();if(p==='announcements')loadAnn();if(p==='inquiries')loadInq();
 }));
 
 // Settings
@@ -360,7 +421,7 @@ async function regUser(role){
         nickname:document.getElementById(p+'Nk').value,role});
     sR(document.getElementById(p+'R'),d.success,(d.uid?'UID:'+d.uid:'')+(d.message||''),d.raw);
     if(d.success&&d.uid){
-        if(role==='teacher'){lastTeacherUid=d.uid;['coTu','clTu','llUid','fbTu','stTu'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=d.uid})}
+        if(role==='teacher'){lastTeacherUid=d.uid;['coTu','clTu','llUid','fbTu'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=d.uid})}
         else{lastStudentUid=d.uid;['csSuId','fbSu','spUid'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=d.uid})}
         loadUsers(role);
     }}catch(e){sR(document.getElementById(p+'R'),false,e.message)}
@@ -505,10 +566,7 @@ async function loadFB(){try{const d=await api('/api/feedbacks');const el=documen
     let h='<table class="tbl"><tr><th>날짜</th><th>학생</th><th>내용</th></tr>';d.feedbacks.forEach(f=>{h+=`<tr><td>${(f.date||'').slice(0,10)}</td><td>${f.studentUid}</td><td style="color:var(--txb)">${f.comment}</td></tr>`});el.innerHTML=h+'</table>'}catch{}}
 
 // Settlement
-async function loadST(){const tu=document.getElementById('stTu').value;
     try{const d=await api('/api/settlement'+(tu?'?teacherUid='+tu:''));
-    document.getElementById('stResult').innerHTML=`<div class="stats" style="margin-top:10px"><div class="stat"><div class="num">${d.totalClasses}</div><div class="lbl">수업</div></div><div class="stat"><div class="num">${d.totalHours}</div><div class="lbl">시간(h)</div></div></div>`}catch(e){document.getElementById('stResult').innerHTML=`<span style="color:var(--er)">${e.message}</span>`}}
-function exportCSV(){const tu=document.getElementById('stTu').value;window.open('/api/settlement/export'+(tu?'?teacherUid='+tu:''),'_blank')}
 
 // Dashboard
 async function loadDash(){
@@ -539,6 +597,102 @@ function checkUpcomingNotif(){
         d.classes.forEach(c=>{if(c.begin-now<600 && c.begin-now>0){new Notification('수업 알림',{body:`${c.name} - 10분 후 시작`,icon:'📅'})}})
     }).catch(()=>{});
     setTimeout(checkUpcomingNotif,60000);
+}
+
+// Settlement / Income
+async function loadIncome(){
+    try{const d=await api('/api/income');
+    document.getElementById('incomeResult').innerHTML=`
+        <div class="stats" style="margin-top:8px">
+            <div class="stat"><div class="num">${d.totalClasses}</div><div class="lbl">총 수업</div></div>
+            <div class="stat"><div class="num">${d.totalHours}h</div><div class="lbl">총 시간</div></div>
+            <div class="stat"><div class="num">${d.hourlyRate?d.hourlyRate.toLocaleString()+'원':'-'}</div><div class="lbl">시급</div></div>
+        </div>
+        <div class="stats"><div class="stat" style="grid-column:span 3"><div class="num" style="color:var(--ok)">${d.totalIncome?d.totalIncome.toLocaleString()+'원':'시급 미설정'}</div><div class="lbl">총 수입 (예상)</div></div></div>
+        <div style="font-size:10px;color:var(--tx2)">💡 시급은 내 프로필 → 시급 설정에서 변경</div>`}catch(e){document.getElementById('incomeResult').textContent=e.message}
+}
+function exportCSV(){window.open('/api/settlement/export','_blank')}
+async function loadTeacherStats(){
+    try{const d=await api('/api/teacher-stats');const el=document.getElementById('statsResult');
+    if(!d.stats.length){el.innerHTML='데이터 없음';return}
+    let h='<table class="tbl"><tr><th>강사</th><th>평가 수</th><th>평균 별점</th></tr>';
+    d.stats.forEach(s=>{h+=`<tr><td>${s.teacherUid}</td><td>${s.ratingCount}</td><td>⭐ ${s.avgScore}</td></tr>`});
+    el.innerHTML=h+'</table>'}catch{}
+}
+
+// Ratings
+async function addRating(){
+    try{await api('/api/ratings','POST',{classId:document.getElementById('rtClId').value,teacherUid:document.getElementById('rtTuId').value,
+        score:document.getElementById('rtScore').value,review:document.getElementById('rtReview').value});
+    sR(document.getElementById('rtR'),true,'등록 완료');loadRatings()}catch(e){sR(document.getElementById('rtR'),false,e.message)}
+}
+async function loadRatings(){
+    try{const d=await api('/api/ratings');const el=document.getElementById('rtList');
+    if(!d.ratings.length){el.innerHTML='없음';return}
+    let h='<table class="tbl"><tr><th>날짜</th><th>수업</th><th>별점</th><th>리뷰</th></tr>';
+    d.ratings.forEach(r=>{h+=`<tr><td>${(r.date||'').slice(0,10)}</td><td>${r.classId}</td><td>⭐${r.score}</td><td style="color:var(--txb)">${r.review}</td></tr>`});
+    el.innerHTML=h+'</table>'}catch{}
+}
+
+// Absences
+async function addAbsence(){
+    try{await api('/api/absences','POST',{classId:document.getElementById('absClId').value,reason:document.getElementById('absReason').value,photoUrl:document.getElementById('absPhoto').value});
+    sR(document.getElementById('absR'),true,'등록 완료');loadAbsences()}catch(e){sR(document.getElementById('absR'),false,e.message)}
+}
+async function loadAbsences(){
+    try{const d=await api('/api/absences');const el=document.getElementById('absList');
+    if(!d.absences.length){el.innerHTML='없음';return}
+    let h='<table class="tbl"><tr><th>날짜</th><th>수업ID</th><th>사유</th><th>증빙</th></tr>';
+    d.absences.forEach(a=>{h+=`<tr><td>${(a.date||'').slice(0,10)}</td><td>${a.classId}</td><td style="color:var(--txb)">${a.reason}</td><td>${a.photoUrl?`<a href="${a.photoUrl}" target="_blank" style="color:var(--ac)">보기</a>`:'-'}</td></tr>`});
+    el.innerHTML=h+'</table>'}catch{}
+}
+
+// My Profile
+async function loadMyProfile(){
+    const uid=MY_UID||'admin';
+    try{const p=await api('/api/teacher-profile/'+uid);
+    document.getElementById('mpBio').value=p.bio||'';document.getElementById('mpCareer').value=p.career||'';
+    document.getElementById('mpRate').value=p.hourly_rate||'';document.getElementById('mpCerts').value=p.certificates||'';
+    document.getElementById('mpVideo').value=p.intro_video||'';document.getElementById('mpPhoto').value=p.photo_url||''}catch{}
+}
+async function saveMyProfile(){
+    try{await api('/api/teacher-profile','POST',{uid:MY_UID||'admin',bio:document.getElementById('mpBio').value,career:document.getElementById('mpCareer').value,
+        hourly_rate:document.getElementById('mpRate').value||0,certificates:document.getElementById('mpCerts').value,
+        intro_video:document.getElementById('mpVideo').value,photo_url:document.getElementById('mpPhoto').value});
+    sR(document.getElementById('mpR'),true,'저장 완료')}catch(e){sR(document.getElementById('mpR'),false,e.message)}
+}
+
+// Announcements
+async function addAnn(){
+    try{await api('/api/announcements','POST',{title:document.getElementById('annTitle').value,content:document.getElementById('annContent').value});
+    sR(document.getElementById('annR'),true,'게시 완료');loadAnn()}catch(e){sR(document.getElementById('annR'),false,e.message)}
+}
+async function loadAnn(){
+    try{const d=await api('/api/announcements');const el=document.getElementById('annList');
+    if(!d.announcements.length){el.innerHTML='공지 없음';return}
+    let h='';d.announcements.forEach(a=>{h+=`<div style="padding:10px;border-bottom:1px solid var(--bdr)"><div style="display:flex;justify-content:space-between;align-items:center"><strong style="color:var(--txb)">${a.title}</strong><span style="font-size:10px;color:var(--tx2)">${(a.date||'').slice(0,10)} · ${a.author}</span></div><div style="margin-top:4px;font-size:12px;white-space:pre-wrap">${a.content}</div></div>`});
+    el.innerHTML=h}catch{}
+}
+
+// Inquiries
+async function addInq(){
+    try{await api('/api/inquiries','POST',{subject:document.getElementById('inqSubj').value,content:document.getElementById('inqContent').value});
+    sR(document.getElementById('inqR'),true,'문의 접수 완료');loadInq()}catch(e){sR(document.getElementById('inqR'),false,e.message)}
+}
+async function loadInq(){
+    try{const d=await api('/api/inquiries');
+    // My inquiries
+    const el=document.getElementById('inqList');
+    if(!d.inquiries.length){el.innerHTML='문의 없음';}
+    else{let h='';d.inquiries.forEach(i=>{h+=`<div style="padding:10px;border-bottom:1px solid var(--bdr)"><div style="display:flex;justify-content:space-between"><strong style="color:var(--txb)">${i.subject}</strong><span style="font-size:10px;color:${i.status==='replied'?'var(--ok)':'var(--warn)'}">● ${i.status==='replied'?'답변완료':'대기중'}</span></div><div style="margin-top:4px;font-size:12px">${i.content}</div>${i.reply?`<div style="margin-top:6px;padding:8px;background:var(--ac-s);border-radius:var(--rs);font-size:12px"><strong>답변:</strong> ${i.reply}</div>`:''}</div>`});
+    el.innerHTML=h}
+    // Admin: all inquiries with reply
+    if(ROLE==='admin'){const ael=document.getElementById('inqListAdmin');
+    let h='';d.inquiries.forEach(i=>{h+=`<div style="padding:10px;border-bottom:1px solid var(--bdr)"><div style="display:flex;justify-content:space-between"><strong style="color:var(--txb)">[${i.from}] ${i.subject}</strong><span style="font-size:10px;color:${i.status==='replied'?'var(--ok)':'var(--warn)'}">● ${i.status}</span></div><div style="margin-top:4px;font-size:12px">${i.content}</div>${i.status!=='replied'?`<div style="margin-top:6px;display:flex;gap:6px"><input class="fi" id="reply${i.id}" placeholder="답변 입력" style="flex:1"><button class="btn btn-p" style="font-size:10px" onclick="replyInq(${i.id})">답변</button></div>`:`<div style="margin-top:4px;font-size:11px;color:var(--ok)">✅ ${i.reply}</div>`}</div>`});
+    ael.innerHTML=h||'문의 없음'}}catch{}
+}
+async function replyInq(id){
+    try{await api('/api/inquiries/'+id+'/reply','POST',{reply:document.getElementById('reply'+id).value});loadInq()}catch(e){alert(e.message)}
 }
 
 document.getElementById('whUrl').textContent='POST '+window.location.origin+'/api/webhook/classin';

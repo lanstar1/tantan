@@ -309,6 +309,89 @@ async def upcoming(s=Depends(_auth)):
     upcoming = [c for c in cls if c["begin"]>now]
     return {"classes": upcoming[:10]}
 
+# ═══ Teacher Profile ═════════════════════════════
+@app.get("/api/teacher-profile/{uid}")
+async def get_tp(uid:str, s=Depends(_auth)):
+    return db.get_teacher_profile(uid)
+
+@app.post("/api/teacher-profile")
+async def set_tp(req:dict, s=Depends(_auth)):
+    uid = req.get("uid") or s.get("classInUid") or s["username"]
+    db.set_teacher_profile(uid, req.get("bio",""), req.get("career",""), req.get("intro_video",""),
+        req.get("photo_url",""), req.get("certificates",""), int(req.get("hourly_rate",0)))
+    return {"success":True}
+
+# ═══ Announcements ═══════════════════════════════
+@app.post("/api/announcements")
+async def add_ann(req:dict, s=Depends(_admin)):
+    db.add_announcement(req["title"], req["content"], s["displayName"])
+    return {"success":True}
+
+@app.get("/api/announcements")
+async def ls_ann(s=Depends(_auth)):
+    return {"announcements": db.list_announcements()}
+
+@app.delete("/api/announcements/{aid}")
+async def del_ann(aid:int, s=Depends(_admin)):
+    db.del_announcement(aid); return {"success":True}
+
+# ═══ Inquiries (1:1 문의) ════════════════════════
+@app.post("/api/inquiries")
+async def add_inq(req:dict, s=Depends(_auth)):
+    db.add_inquiry(s["username"], req["subject"], req["content"])
+    return {"success":True}
+
+@app.get("/api/inquiries")
+async def ls_inq(s=Depends(_auth)):
+    user = None if s["role"]=="admin" else s["username"]
+    return {"inquiries": db.list_inquiries(user)}
+
+@app.post("/api/inquiries/{iid}/reply")
+async def reply_inq(iid:int, req:dict, s=Depends(_admin)):
+    db.reply_inquiry(iid, req["reply"])
+    return {"success":True}
+
+# ═══ Absences (결석 증빙) ════════════════════════
+@app.post("/api/absences")
+async def add_abs(req:dict, s=Depends(_auth)):
+    uid = s.get("classInUid") or s["username"]
+    db.add_absence(uid, req.get("classId",""), req.get("reason",""), req.get("photoUrl",""))
+    return {"success":True}
+
+@app.get("/api/absences")
+async def ls_abs(s=Depends(_auth)):
+    uid = s.get("classInUid") if s["role"]=="teacher" else None
+    return {"absences": db.list_absences(uid)}
+
+# ═══ Ratings (만족도/별점) ═══════════════════════
+@app.post("/api/ratings")
+async def add_rat(req:dict, s=Depends(_auth)):
+    db.add_rating(req["classId"], req.get("courseId",""), req.get("studentUid",""),
+        req.get("teacherUid",""), int(req.get("score",5)), req.get("review",""))
+    return {"success":True}
+
+@app.get("/api/ratings")
+async def ls_rat(teacherUid:Optional[str]=None, s=Depends(_auth)):
+    tuid = s.get("classInUid") if s["role"]=="teacher" else teacherUid
+    return {"ratings": db.list_ratings(tuid)}
+
+@app.get("/api/teacher-stats")
+async def teacher_stats(teacherUid:Optional[str]=None, s=Depends(_auth)):
+    return {"stats": db.get_teacher_stats(teacherUid)}
+
+# ═══ Enhanced Settlement (수입 포함) ═════════════
+@app.get("/api/income")
+async def income(s=Depends(_auth)):
+    uid = s.get("classInUid") if s["role"]=="teacher" else None
+    cls = db.list_classes(teacher_uid=uid)
+    profile = db.get_teacher_profile(uid or "") if uid else {"hourly_rate":0}
+    rate = profile.get("hourly_rate",0)
+    total_mins = sum((c["end"]-c["begin"])/60 for c in cls)
+    total_hours = round(total_mins/60,1)
+    total_income = round(total_hours * rate)
+    return {"teacherUid":uid,"totalClasses":len(cls),"totalHours":total_hours,
+            "hourlyRate":rate,"totalIncome":total_income}
+
 # ═══ Static ══════════════════════════════════════
 app.mount("/static", StaticFiles(directory="static"), name="static")
 @app.get("/")

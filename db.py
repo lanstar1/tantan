@@ -44,6 +44,23 @@ if DB_URL:
                 id SERIAL PRIMARY KEY, teacher_uid TEXT NOT NULL, teacher_name TEXT DEFAULT '',
                 slot_date DATE NOT NULL, start_time TEXT NOT NULL, end_time TEXT NOT NULL,
                 status TEXT DEFAULT 'available', created_at TIMESTAMPTZ DEFAULT NOW())""")
+            cur.execute("""CREATE TABLE IF NOT EXISTS teacher_profiles (
+                uid TEXT PRIMARY KEY, bio TEXT DEFAULT '', career TEXT DEFAULT '',
+                intro_video TEXT DEFAULT '', photo_url TEXT DEFAULT '', certificates TEXT DEFAULT '',
+                hourly_rate INTEGER DEFAULT 0)""")
+            cur.execute("""CREATE TABLE IF NOT EXISTS announcements (
+                id SERIAL PRIMARY KEY, title TEXT, content TEXT, author TEXT,
+                created_at TIMESTAMPTZ DEFAULT NOW())""")
+            cur.execute("""CREATE TABLE IF NOT EXISTS inquiries (
+                id SERIAL PRIMARY KEY, from_user TEXT, subject TEXT, content TEXT,
+                reply TEXT DEFAULT '', status TEXT DEFAULT 'open', created_at TIMESTAMPTZ DEFAULT NOW())""")
+            cur.execute("""CREATE TABLE IF NOT EXISTS absences (
+                id SERIAL PRIMARY KEY, teacher_uid TEXT, class_id TEXT,
+                reason TEXT DEFAULT '', photo_url TEXT DEFAULT '', created_at TIMESTAMPTZ DEFAULT NOW())""")
+            cur.execute("""CREATE TABLE IF NOT EXISTS ratings (
+                id SERIAL PRIMARY KEY, class_id TEXT, course_id TEXT,
+                student_uid TEXT, teacher_uid TEXT, score INTEGER DEFAULT 5,
+                review TEXT DEFAULT '', created_at TIMESTAMPTZ DEFAULT NOW())""")
             c.commit()
 
     # Credentials
@@ -218,6 +235,78 @@ if DB_URL:
         with _conn() as c:
             c.cursor().execute("UPDATE availability SET status=%s WHERE id=%s",(status,aid)); c.commit()
 
+    # Teacher Profiles
+    def get_teacher_profile(uid):
+        with _conn() as c:
+            cur=c.cursor(); cur.execute("SELECT * FROM teacher_profiles WHERE uid=%s",(uid,))
+            r=cur.fetchone()
+            return dict(r) if r else {"uid":uid,"bio":"","career":"","intro_video":"","photo_url":"","certificates":"","hourly_rate":0}
+    def set_teacher_profile(uid, bio="", career="", intro_video="", photo_url="", certificates="", hourly_rate=0):
+        with _conn() as c:
+            c.cursor().execute("""INSERT INTO teacher_profiles(uid,bio,career,intro_video,photo_url,certificates,hourly_rate)
+                VALUES(%s,%s,%s,%s,%s,%s,%s)ON CONFLICT(uid)DO UPDATE SET bio=%s,career=%s,intro_video=%s,photo_url=%s,certificates=%s,hourly_rate=%s""",
+                (uid,bio,career,intro_video,photo_url,certificates,hourly_rate,bio,career,intro_video,photo_url,certificates,hourly_rate)); c.commit()
+
+    # Announcements
+    def add_announcement(title, content, author):
+        with _conn() as c:
+            c.cursor().execute("INSERT INTO announcements(title,content,author)VALUES(%s,%s,%s)",(title,content,author)); c.commit()
+    def list_announcements():
+        with _conn() as c:
+            cur=c.cursor(); cur.execute("SELECT * FROM announcements ORDER BY created_at DESC")
+            return [{"id":r["id"],"title":r["title"],"content":r["content"],"author":r["author"],"date":str(r["created_at"])} for r in cur.fetchall()]
+    def del_announcement(aid):
+        with _conn() as c:
+            c.cursor().execute("DELETE FROM announcements WHERE id=%s",(aid,)); c.commit()
+
+    # Inquiries
+    def add_inquiry(from_user, subject, content):
+        with _conn() as c:
+            c.cursor().execute("INSERT INTO inquiries(from_user,subject,content)VALUES(%s,%s,%s)",(from_user,subject,content)); c.commit()
+    def list_inquiries(from_user=None):
+        with _conn() as c:
+            cur=c.cursor()
+            if from_user: cur.execute("SELECT * FROM inquiries WHERE from_user=%s ORDER BY created_at DESC",(from_user,))
+            else: cur.execute("SELECT * FROM inquiries ORDER BY created_at DESC")
+            return [{"id":r["id"],"from":r["from_user"],"subject":r["subject"],"content":r["content"],
+                     "reply":r["reply"],"status":r["status"],"date":str(r["created_at"])} for r in cur.fetchall()]
+    def reply_inquiry(iid, reply):
+        with _conn() as c:
+            c.cursor().execute("UPDATE inquiries SET reply=%s,status='replied' WHERE id=%s",(reply,iid)); c.commit()
+
+    # Absences
+    def add_absence(teacher_uid, class_id, reason, photo_url=""):
+        with _conn() as c:
+            c.cursor().execute("INSERT INTO absences(teacher_uid,class_id,reason,photo_url)VALUES(%s,%s,%s,%s)",
+                (teacher_uid,class_id,reason,photo_url)); c.commit()
+    def list_absences(teacher_uid=None):
+        with _conn() as c:
+            cur=c.cursor()
+            if teacher_uid: cur.execute("SELECT * FROM absences WHERE teacher_uid=%s ORDER BY created_at DESC",(teacher_uid,))
+            else: cur.execute("SELECT * FROM absences ORDER BY created_at DESC")
+            return [{"id":r["id"],"teacherUid":r["teacher_uid"],"classId":r["class_id"],
+                     "reason":r["reason"],"photoUrl":r["photo_url"],"date":str(r["created_at"])} for r in cur.fetchall()]
+
+    # Ratings
+    def add_rating(class_id, course_id, student_uid, teacher_uid, score, review=""):
+        with _conn() as c:
+            c.cursor().execute("INSERT INTO ratings(class_id,course_id,student_uid,teacher_uid,score,review)VALUES(%s,%s,%s,%s,%s,%s)",
+                (class_id,course_id,student_uid,teacher_uid,score,review)); c.commit()
+    def list_ratings(teacher_uid=None):
+        with _conn() as c:
+            cur=c.cursor()
+            if teacher_uid: cur.execute("SELECT * FROM ratings WHERE teacher_uid=%s ORDER BY created_at DESC",(teacher_uid,))
+            else: cur.execute("SELECT * FROM ratings ORDER BY created_at DESC")
+            return [{"id":r["id"],"classId":r["class_id"],"courseId":r["course_id"],"studentUid":r["student_uid"],
+                     "teacherUid":r["teacher_uid"],"score":r["score"],"review":r["review"],"date":str(r["created_at"])} for r in cur.fetchall()]
+    def get_teacher_stats(teacher_uid=None):
+        with _conn() as c:
+            cur=c.cursor()
+            q="SELECT teacher_uid, COUNT(*) as cnt, COALESCE(AVG(score),0) as avg_score FROM ratings"
+            if teacher_uid: q+=" WHERE teacher_uid=%s"; cur.execute(q+" GROUP BY teacher_uid",(teacher_uid,))
+            else: cur.execute(q+" GROUP BY teacher_uid")
+            return [{"teacherUid":r["teacher_uid"],"ratingCount":r["cnt"],"avgScore":round(float(r["avg_score"]),1)} for r in cur.fetchall()]
+
     def count_all():
         with _conn() as c:
             cur=c.cursor(); d={}
@@ -231,6 +320,8 @@ else:
     # ── In-memory fallback ──
     _accounts={}; _creds_store={"sid":None,"secret":None}; _users={}; _courses={}; _classes={}
     _webhooks=[]; _feedbacks=[]; _sessions={}; _profiles={}; _avail=[]; _avail_counter=[0]
+    _teacher_profiles={}; _announcements=[]; _ann_counter=[0]; _inquiries=[]; _inq_counter=[0]
+    _absences=[]; _abs_counter=[0]; _ratings=[]; _rat_counter=[0]
 
     def init_db(): pass
     def get_creds(): return _creds_store["sid"],_creds_store["secret"]
@@ -314,6 +405,45 @@ else:
     def update_availability_status(aid, status):
         for a in _avail:
             if a["id"]==aid: a["status"]=status
+
+    # Teacher Profiles
+    def get_teacher_profile(uid): return _teacher_profiles.get(uid,{"uid":uid,"bio":"","career":"","intro_video":"","photo_url":"","certificates":"","hourly_rate":0})
+    def set_teacher_profile(uid,bio="",career="",intro_video="",photo_url="",certificates="",hourly_rate=0):
+        _teacher_profiles[uid]={"uid":uid,"bio":bio,"career":career,"intro_video":intro_video,"photo_url":photo_url,"certificates":certificates,"hourly_rate":hourly_rate}
+
+    # Announcements
+    def add_announcement(title,content,author):
+        _ann_counter[0]+=1; _announcements.insert(0,{"id":_ann_counter[0],"title":title,"content":content,"author":author,"date":datetime.now().isoformat()})
+    def list_announcements(): return _announcements
+    def del_announcement(aid): _announcements[:]=[a for a in _announcements if a["id"]!=aid]
+
+    # Inquiries
+    def add_inquiry(from_user,subject,content):
+        _inq_counter[0]+=1; _inquiries.insert(0,{"id":_inq_counter[0],"from":from_user,"subject":subject,"content":content,"reply":"","status":"open","date":datetime.now().isoformat()})
+    def list_inquiries(from_user=None):
+        return [x for x in _inquiries if x["from"]==from_user] if from_user else _inquiries
+    def reply_inquiry(iid,reply):
+        for i in _inquiries:
+            if i["id"]==iid: i["reply"]=reply; i["status"]="replied"
+
+    # Absences
+    def add_absence(teacher_uid,class_id,reason,photo_url=""):
+        _abs_counter[0]+=1; _absences.insert(0,{"id":_abs_counter[0],"teacherUid":teacher_uid,"classId":class_id,"reason":reason,"photoUrl":photo_url,"date":datetime.now().isoformat()})
+    def list_absences(teacher_uid=None):
+        return [x for x in _absences if x["teacherUid"]==teacher_uid] if teacher_uid else _absences
+
+    # Ratings
+    def add_rating(class_id,course_id,student_uid,teacher_uid,score,review=""):
+        _rat_counter[0]+=1; _ratings.insert(0,{"id":_rat_counter[0],"classId":class_id,"courseId":course_id,"studentUid":student_uid,"teacherUid":teacher_uid,"score":score,"review":review,"date":datetime.now().isoformat()})
+    def list_ratings(teacher_uid=None):
+        return [x for x in _ratings if x["teacherUid"]==teacher_uid] if teacher_uid else _ratings
+    def get_teacher_stats(teacher_uid=None):
+        r=_ratings
+        if teacher_uid: r=[x for x in r if x["teacherUid"]==teacher_uid]
+        if not r: return []
+        from collections import defaultdict; d=defaultdict(list)
+        for x in r: d[x["teacherUid"]].append(x["score"])
+        return [{"teacherUid":k,"ratingCount":len(v),"avgScore":round(sum(v)/len(v),1)} for k,v in d.items()]
 
     def count_all():
         return {"teachers":len([u for u in _users.values() if u["role"]=="teacher"]),
