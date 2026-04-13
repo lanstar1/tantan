@@ -566,9 +566,6 @@ async function submitFB(){try{const d=await api('/api/feedback/submit','POST',{c
 async function loadFB(){try{const d=await api('/api/feedbacks');const el=document.getElementById('fbList');if(!d.feedbacks.length){el.innerHTML='없음';return}
     let h='<table class="tbl"><tr><th>날짜</th><th>학생</th><th>내용</th></tr>';d.feedbacks.forEach(f=>{h+=`<tr><td>${(f.date||'').slice(0,10)}</td><td>${f.studentUid}</td><td style="color:var(--txb)">${f.comment}</td></tr>`});el.innerHTML=h+'</table>'}catch{}}
 
-// Settlement
-    try{const d=await api('/api/settlement'+(tu?'?teacherUid='+tu:''));
-
 // Dashboard
 async function loadDash(){
     try{const d=await api('/api/dashboard');document.getElementById('d-t').textContent=d.teachers;document.getElementById('d-s').textContent=d.students;
