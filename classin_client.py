@@ -47,7 +47,7 @@ async def test_connection(sid, secret):
 
 # Users
 async def register_user(sid, secret, tel, pw, nick="", add=0):
-    p = {"telephone": tel, "password": hashlib.md5(pw.encode()).hexdigest()}
+    p = {"telephone": tel, "password": pw}
     if nick: p["nickname"] = nick
     if add: p["addToSchoolMember"] = str(add)
     return await call_v1("register", sid, secret, p)
