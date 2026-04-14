@@ -594,3 +594,6 @@ async def favicon(): return FileResponse("static/favicon.ico") if __import__("os
 
 @app.get("/")
 async def index(): return FileResponse("static/index.html")
+
+@app.get("/manual")
+async def manual(): return FileResponse("static/manual.html")

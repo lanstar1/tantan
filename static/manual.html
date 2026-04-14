@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ClassIn 강사 포털 — 사용자 매뉴얼</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+:root{--bg:#0a0c12;--bg2:#12151f;--bg3:#1a1e2c;--bg4:#232840;--tx:#e2e5f0;--tx2:#8890a8;--tx3:#505874;--ac:#6c9fff;--ac2:#5080dd;--acs:rgba(108,159,255,.12);--ok:#4ade80;--oks:rgba(74,222,128,.1);--er:#f87171;--wr:#fbbf24;--pr:#a78bfa;--r:14px;--font:'Pretendard Variable',Pretendard,-apple-system,sans-serif}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth;font-size:16px}
+body{font-family:var(--font);background:var(--bg);color:var(--tx);line-height:1.7;-webkit-font-smoothing:antialiased}
+::selection{background:var(--acs);color:var(--ac)}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:3px}
+a{color:var(--ac);text-decoration:none}a:hover{text-decoration:underline}
+/* ═══ HEADER ═══ */
+.header{position:sticky;top:0;z-index:100;background:rgba(10,12,18,.85);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.06);padding:14px 0}
+.header-inner{max-width:900px;margin:0 auto;padding:0 24px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.logo{font-size:18px;font-weight:800;letter-spacing:-.5px;color:#fff}
+.logo span{color:var(--ac)}
+.role-switch{display:flex;background:var(--bg3);border-radius:12px;padding:3px;gap:2px}
+.role-btn{padding:8px 20px;border-radius:10px;border:none;font-size:13px;font-weight:700;cursor:pointer;transition:.25s;font-family:var(--font);color:var(--tx2);background:none}
+.role-btn.on{background:var(--ac);color:#fff;box-shadow:0 4px 15px rgba(108,159,255,.35)}
+/* ═══ HERO ═══ */
+.hero{text-align:center;padding:80px 24px 60px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(circle at 50% 80%,rgba(108,159,255,.08) 0%,transparent 50%);pointer-events:none}
+.hero h1{font-size:clamp(32px,6vw,52px);font-weight:900;letter-spacing:-1.5px;line-height:1.2;margin-bottom:12px}
+.hero h1 em{font-style:normal;background:linear-gradient(135deg,var(--ac),var(--pr));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{font-size:17px;color:var(--tx2);max-width:500px;margin:0 auto}
+.hero-badge{display:inline-block;padding:6px 16px;border-radius:20px;font-size:12px;font-weight:700;margin-bottom:20px;border:1px solid}
+.hero-badge.admin{background:rgba(108,159,255,.1);color:var(--ac);border-color:rgba(108,159,255,.2)}
+.hero-badge.teacher{background:var(--oks);color:var(--ok);border-color:rgba(74,222,128,.2)}
+/* ═══ CONTENT ═══ */
+.content{max-width:900px;margin:0 auto;padding:0 24px 100px}
+.manual{display:none}.manual.on{display:block}
+/* ═══ TOC ═══ */
+.toc{background:var(--bg2);border:1px solid rgba(255,255,255,.06);border-radius:var(--r);padding:24px 28px;margin-bottom:40px}
+.toc h3{font-size:14px;font-weight:700;color:var(--tx2);text-transform:uppercase;letter-spacing:1px;margin-bottom:14px}
+.toc-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:6px}
+.toc-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:10px;font-size:14px;font-weight:500;color:var(--tx);cursor:pointer;transition:.2s}
+.toc-item:hover{background:var(--acs);color:var(--ac);text-decoration:none}
+.toc-item .num{width:26px;height:26px;border-radius:8px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:var(--tx2);flex-shrink:0}
+/* ═══ SECTION ═══ */
+.sec{margin-bottom:60px;opacity:0;transform:translateY(30px);transition:opacity .6s,transform .6s}
+.sec.visible{opacity:1;transform:translateY(0)}
+.sec-title{font-size:28px;font-weight:800;letter-spacing:-.8px;margin-bottom:6px;display:flex;align-items:center;gap:12px}
+.sec-title .badge{font-size:11px;font-weight:700;padding:4px 10px;border-radius:8px;background:var(--acs);color:var(--ac)}
+.sec-sub{font-size:14px;color:var(--tx2);margin-bottom:24px}
+/* ═══ STEP CARDS ═══ */
+.steps{display:flex;flex-direction:column;gap:16px}
+.step{background:var(--bg2);border:1px solid rgba(255,255,255,.06);border-radius:var(--r);padding:20px 24px;display:flex;gap:16px;align-items:flex-start;transition:.3s}
+.step:hover{border-color:rgba(108,159,255,.2);transform:translateX(4px)}
+.step-num{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--ac),var(--pr));display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;color:#fff;flex-shrink:0}
+.step-body h4{font-size:15px;font-weight:700;color:#fff;margin-bottom:4px}
+.step-body p{font-size:13px;color:var(--tx2);line-height:1.6}
+.step-body code{background:var(--bg4);padding:2px 8px;border-radius:6px;font-size:12px;color:var(--ac);font-family:'JetBrains Mono',monospace}
+/* ═══ ANIMATED DEMO ═══ */
+.demo-box{background:var(--bg3);border:1px solid rgba(255,255,255,.08);border-radius:var(--r);overflow:hidden;margin:20px 0}
+.demo-header{padding:10px 16px;background:var(--bg4);display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:var(--tx2)}
+.demo-header .dot{width:8px;height:8px;border-radius:50%}
+.demo-header .dot.r{background:#f87171}.demo-header .dot.y{background:#fbbf24}.demo-header .dot.g{background:#4ade80}
+.demo-screen{padding:20px;min-height:200px;position:relative;overflow:hidden}
+/* Simulated UI elements */
+.sim-sidebar{width:140px;background:var(--bg2);border-radius:8px;padding:8px;position:absolute;left:12px;top:12px;bottom:12px}
+.sim-nav{padding:5px 8px;border-radius:6px;font-size:10px;color:var(--tx3);margin-bottom:2px;transition:.3s}
+.sim-nav.active{background:var(--acs);color:var(--ac)}
+.sim-main{margin-left:160px;min-height:180px}
+.sim-card{background:var(--bg2);border:1px solid rgba(255,255,255,.06);border-radius:8px;padding:12px;margin-bottom:8px}
+.sim-input{background:var(--bg);border:1px solid var(--bg4);border-radius:6px;padding:6px 10px;font-size:11px;color:var(--tx);width:100%;margin-bottom:6px;font-family:var(--font);display:block}
+.sim-input.typing{border-color:var(--ac);box-shadow:0 0 0 2px var(--acs)}
+.sim-btn{display:inline-block;padding:5px 14px;border-radius:6px;font-size:10px;font-weight:700;background:var(--ac);color:#fff;margin-top:4px}
+.sim-btn.success{background:var(--ok);color:#000}
+.sim-result{margin-top:8px;padding:6px 10px;border-radius:6px;font-size:10px;opacity:0;transition:.4s}
+.sim-result.show{opacity:1}
+.sim-result.ok{background:var(--oks);color:var(--ok)}
+.sim-label{font-size:9px;color:var(--tx3);margin-bottom:2px;font-weight:600}
+/* Cursor animation */
+.sim-cursor{width:14px;height:14px;position:absolute;pointer-events:none;z-index:10;opacity:0;transition:all .6s cubic-bezier(.4,0,.2,1)}
+.sim-cursor::before{content:'';display:block;width:0;height:0;border-left:6px solid #fff;border-top:4px solid transparent;border-bottom:4px solid transparent;filter:drop-shadow(0 2px 4px rgba(0,0,0,.5))}
+.sim-cursor.visible{opacity:1}
+.sim-cursor.click::after{content:'';position:absolute;top:-4px;left:-4px;width:22px;height:22px;border-radius:50%;background:rgba(108,159,255,.3);animation:clickRipple .4s ease-out}
+@keyframes clickRipple{0%{transform:scale(0);opacity:1}100%{transform:scale(2);opacity:0}}
+/* Upload animation */
+.sim-upload-bar{height:4px;background:var(--bg4);border-radius:2px;overflow:hidden;margin-top:6px}
+.sim-upload-fill{height:100%;background:linear-gradient(90deg,var(--ac),var(--pr));border-radius:2px;width:0%;transition:width 2s ease-in-out}
+.sim-upload-bar.animate .sim-upload-fill{width:100%}
+/* Folder tree animation */
+.sim-folder{display:flex;align-items:center;gap:6px;padding:4px 8px;border-radius:6px;font-size:11px;color:var(--tx);cursor:pointer;transition:.2s;opacity:0;transform:translateX(-10px)}
+.sim-folder.show{opacity:1;transform:translateX(0)}
+.sim-folder:hover{background:var(--acs)}
+.sim-folder .icon{font-size:14px}
+/* ═══ INFO BOX ═══ */
+.info{padding:14px 18px;border-radius:10px;font-size:13px;line-height:1.6;margin:16px 0;display:flex;gap:10px;align-items:flex-start}
+.info.tip{background:var(--acs);border:1px solid rgba(108,159,255,.15);color:var(--ac)}
+.info.warn{background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.15);color:var(--wr)}
+.info.important{background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.15);color:var(--er)}
+.info-icon{font-size:18px;flex-shrink:0;margin-top:1px}
+/* ═══ FLOW DIAGRAM ═══ */
+.flow{display:flex;align-items:center;gap:0;flex-wrap:wrap;margin:20px 0;justify-content:center}
+.flow-node{padding:10px 18px;border-radius:10px;font-size:12px;font-weight:700;text-align:center;white-space:nowrap}
+.flow-node.blue{background:var(--acs);color:var(--ac);border:1px solid rgba(108,159,255,.2)}
+.flow-node.green{background:var(--oks);color:var(--ok);border:1px solid rgba(74,222,128,.2)}
+.flow-node.purple{background:rgba(167,139,250,.1);color:var(--pr);border:1px solid rgba(167,139,250,.2)}
+.flow-arrow{font-size:18px;color:var(--tx3);padding:0 6px}
+/* ═══ SHORTCUT ═══ */
+.kbd{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;background:var(--bg4);border:1px solid rgba(255,255,255,.08);border-radius:6px;font-size:11px;font-weight:700;color:var(--tx2);font-family:'JetBrains Mono',monospace}
+/* ═══ RESPONSIVE ═══ */
+@media(max-width:768px){
+  .hero{padding:60px 20px 40px}
+  .toc-list{grid-template-columns:1fr}
+  .step{flex-direction:column}
+  .role-btn{padding:6px 14px;font-size:12px}
+  .demo-screen .sim-sidebar{display:none}
+  .demo-screen .sim-main{margin-left:0}
+  .flow{flex-direction:column;gap:8px}
+  .flow-arrow{transform:rotate(90deg)}
+  .sec-title{font-size:22px}
+}
+/* ═══ ANIMATIONS ═══ */
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.anim-delay-1{animation-delay:.1s}.anim-delay-2{animation-delay:.2s}.anim-delay-3{animation-delay:.3s}
+</style>
+</head>
+<body>
+
+<header class="header">
+<div class="header-inner">
+  <div class="logo">ClassIn <span>강사 포털</span> 매뉴얼</div>
+  <div class="role-switch">
+    <button class="role-btn on" onclick="switchManual('admin',this)">👑 관리자용</button>
+    <button class="role-btn" onclick="switchManual('teacher',this)">👨‍🏫 강사용</button>
+  </div>
+</div>
+</header>
+
+<div class="hero">
+  <div class="hero-badge admin" id="heroBadge">관리자 매뉴얼</div>
+  <h1>ClassIn 강사 포털<br><em>완벽 가이드</em></h1>
+  <p>교육 운영에 필요한 모든 기능을 단계별로 안내합니다</p>
+</div>
+
+<div class="content">
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- ═══ ADMIN MANUAL ═════════════════════════════════ -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="manual on" id="manual-admin">
+
+<nav class="toc"><h3>목차</h3>
+<div class="toc-list">
+  <a class="toc-item" href="#a1"><span class="num">1</span>초기 설정</a>
+  <a class="toc-item" href="#a2"><span class="num">2</span>강사/학생 등록</a>
+  <a class="toc-item" href="#a3"><span class="num">3</span>코스 → 수업 생성</a>
+  <a class="toc-item" href="#a4"><span class="num">4</span>교육과정 등록</a>
+  <a class="toc-item" href="#a5"><span class="num">5</span>학습 자료실</a>
+  <a class="toc-item" href="#a6"><span class="num">6</span>수업 녹화</a>
+  <a class="toc-item" href="#a7"><span class="num">7</span>진도/지침/정산</a>
+  <a class="toc-item" href="#a8"><span class="num">8</span>단축키 & 팁</a>
+</div></nav>
+
+<!-- SEC 1 -->
+<section class="sec" id="a1">
+<h2 class="sec-title">초기 설정 <span class="badge">최초 1회</span></h2>
+<p class="sec-sub">포털을 처음 열면 관리자 계정 생성 → ClassIn API 연결 순서로 진행합니다.</p>
+<div class="steps">
+  <div class="step"><div class="step-num">1</div><div class="step-body"><h4>관리자 계정 생성</h4><p>최초 접속 시 자동으로 초기 설정 화면이 나타납니다.<br>아이디, 비밀번호, 표시이름, 시간대를 입력하고 <strong>🔧 초기 설정</strong> 버튼을 클릭하세요.</p></div></div>
+  <div class="step"><div class="step-num">2</div><div class="step-body"><h4>API 설정</h4><p>사이드바 → <strong>API 설정</strong> 메뉴에서 ClassIn에서 발급받은 <code>SID</code>와 <code>SECRET</code>을 입력합니다.<br><strong>연결 테스트</strong> 버튼으로 정상 연결을 확인하세요. <code>✅ API 인증 성공!</code> 메시지가 나오면 완료입니다.</p></div></div>
+  <div class="step"><div class="step-num">3</div><div class="step-body"><h4>강사 계정 생성</h4><p>사이드바 → <strong>계정 관리</strong>에서 강사가 포털에 로그인할 계정을 만듭니다.<br>ClassIn UID는 강사 등록 후 자동으로 나오는 값을 입력하세요.</p></div></div>
+</div>
+
+<div class="demo-box">
+<div class="demo-header"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span> API 설정 데모</div>
+<div class="demo-screen" id="demoApi">
+  <div class="sim-main" style="margin-left:0">
+    <div class="sim-card">
+      <div style="font-size:12px;font-weight:700;color:#fff;margin-bottom:8px">🔑 ClassIn API</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div><div class="sim-label">SID</div><input class="sim-input" id="simSid" value="" readonly></div>
+        <div><div class="sim-label">SECRET</div><input class="sim-input" id="simSec" value="" readonly></div>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:8px">
+        <div class="sim-btn" id="simSaveBtn">저장</div>
+        <div class="sim-btn" style="background:transparent;border:1px solid var(--bg4);color:var(--tx2)" id="simTestBtn">연결 테스트</div>
+      </div>
+      <div class="sim-result" id="simApiResult">✅ API 인증 성공!</div>
+    </div>
+  </div>
+</div>
+</div>
+</section>
+
+<!-- SEC 2 -->
+<section class="sec" id="a2">
+<h2 class="sec-title">강사/학생 등록</h2>
+<p class="sec-sub">ClassIn에 사용자를 등록하면 ClassIn 앱에서 로그인할 수 있습니다.</p>
+
+<div class="info warn"><span class="info-icon">⚠️</span><div>전화번호 형식이 중요합니다! <strong>00국가코드-번호(앞0제외)</strong><br>예) 한국: <code>0082-1047666192</code> / 중국: <code>0086-13912345678</code></div></div>
+
+<div class="steps">
+  <div class="step"><div class="step-num">1</div><div class="step-body"><h4>강사 관리 → 강사 등록</h4><p>전화번호, 닉네임, 비밀번호를 입력 → <strong>강사 등록</strong> 클릭<br>성공 시 <code>UID:1234567</code> 형태로 고유번호가 반환됩니다. 이 UID는 이후 코스/수업에 자동 입력됩니다.</p></div></div>
+  <div class="step"><div class="step-num">2</div><div class="step-body"><h4>학생 관리 → 학생 등록</h4><p>동일 방식으로 학생도 등록합니다. TOPIK 급수, 학습 목적, 모국어를 프로필에 추가 입력할 수 있습니다.</p></div></div>
+</div>
+
+<div class="info tip"><span class="info-icon">💡</span><div>UID 클릭 시 자동 복사됩니다. 다른 폼에서 붙여넣기 할 수 있어요.</div></div>
+</section>
+
+<!-- SEC 3 -->
+<section class="sec" id="a3">
+<h2 class="sec-title">코스 → 수업 생성</h2>
+<p class="sec-sub">핵심 운영 흐름: 코스 생성 → 학생 배정 → 수업 생성</p>
+
+<div class="flow">
+  <div class="flow-node blue">강사 등록</div><span class="flow-arrow">→</span>
+  <div class="flow-node blue">학생 등록</div><span class="flow-arrow">→</span>
+  <div class="flow-node purple">코스 생성</div><span class="flow-arrow">→</span>
+  <div class="flow-node purple">학생 배정</div><span class="flow-arrow">→</span>
+  <div class="flow-node green">수업 생성</div>
+</div>
+
+<div class="steps">
+  <div class="step"><div class="step-num">1</div><div class="step-body"><h4>코스 관리 → 코스 생성</h4><p>코스 이름과 담당 강사 UID를 입력 → <strong>생성</strong><br>반환된 코스 ID가 수업 생성, 학생 배정 폼에 자동으로 입력됩니다.</p></div></div>
+  <div class="step"><div class="step-num">2</div><div class="step-body"><h4>학생 배정</h4><p>코스 ID + 학생 UID → <strong>배정</strong> 클릭<br>배정된 학생은 해당 코스의 모든 수업에 자동 참여합니다.</p></div></div>
+  <div class="step"><div class="step-num">3</div><div class="step-body"><h4>수업/입장 → 수업 생성</h4><p>코스 ID, 수업명, 시작/종료 시간, 강사 UID → <strong>수업 생성</strong><br>생성 후 캘린더에 자동으로 일정이 표시됩니다.</p></div></div>
+  <div class="step"><div class="step-num">4</div><div class="step-body"><h4>입장 링크</h4><p>UID를 입력하고 <strong>🔗 링크 생성</strong> → 강사/학생이 ClassIn 앱 없이 웹으로 입장 가능한 URL이 생성됩니다.</p></div></div>
+</div>
+
+<div class="demo-box">
+<div class="demo-header"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span> 수업 생성 플로우 애니메이션</div>
+<div class="demo-screen" id="demoClass" style="min-height:240px">
+  <div class="sim-main" style="margin-left:0">
+    <div class="sim-card" id="simClassCard">
+      <div style="font-size:12px;font-weight:700;color:#fff;margin-bottom:8px">➕ 수업 생성</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+        <div><div class="sim-label">코스 ID</div><input class="sim-input" id="simCourseId" value="" readonly></div>
+        <div><div class="sim-label">수업명</div><input class="sim-input" id="simClassName" value="" readonly></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:6px">
+        <div><div class="sim-label">시작</div><input class="sim-input" id="simBegin" value="" readonly></div>
+        <div><div class="sim-label">종료</div><input class="sim-input" id="simEnd" value="" readonly></div>
+        <div><div class="sim-label">강사 UID</div><input class="sim-input" id="simTeacher" value="" readonly></div>
+      </div>
+      <div class="sim-btn" id="simClassBtn" style="margin-top:8px">수업 생성</div>
+      <div class="sim-result" id="simClassResult">✅ 수업 ID: 2891034 — 캘린더에 등록 완료</div>
+    </div>
+  </div>
+</div>
+</div>
+</section>
+
+<!-- SEC 4 -->
+<section class="sec" id="a4">
+<h2 class="sec-title">교육과정 등록</h2>
+<p class="sec-sub">레벨별 단원, 핵심 교육 포인트를 체계적으로 등록합니다.</p>
+
+<div class="steps">
+  <div class="step"><div class="step-num">1</div><div class="step-body"><h4>레벨 선택</h4><p>초급 / 중급 / 고급 / 비즈니스 중 선택</p></div></div>
+  <div class="step"><div class="step-num">2</div><div class="step-body"><h4>단원 정보 입력</h4><p>단원 번호, 제목, 설명을 입력합니다.<br>예) <code>1과</code> — <code>인사하기</code></p></div></div>
+  <div class="step"><div class="step-num">3</div><div class="step-body"><h4>핵심 교육 포인트</h4><p>줄바꿈으로 구분하여 여러 포인트를 입력합니다:<br><code>존댓말/반말 구분</code><br><code>자기소개 패턴</code><br><code>인사 상황별 표현</code></p></div></div>
+</div>
+
+<div class="info tip"><span class="info-icon">💡</span><div>등록된 교육과정은 <strong>학생 진도 추적</strong>과 <strong>AI 지침서 생성</strong>의 기반이 됩니다. 모든 단원을 미리 등록해 두면 진도 관리가 편리합니다.</div></div>
+</section>
+
+<!-- SEC 5 -->
+<section class="sec" id="a5">
+<h2 class="sec-title">학습 자료실</h2>
+<p class="sec-sub">ClassIn 클라우드 드라이브에 교재, 영상을 업로드하고 폴더로 관리합니다.</p>
+
+<div class="steps">
+  <div class="step"><div class="step-num">1</div><div class="step-body"><h4>폴더 구조 만들기</h4><p><strong>📁 새 폴더</strong> 버튼으로 용도별 폴더를 생성합니다.<br>예) <code>교사 교육자료</code> → <code>우수수업 영상</code>, <code>티칭 스킬</code></p></div></div>
+  <div class="step"><div class="step-num">2</div><div class="step-body"><h4>파일 업로드</h4><p><strong>📎 파일 업로드</strong> 버튼 → 파일 선택 (다중 가능, 최대 500MB)<br>업로드 진행 상태가 표시되고, 완료 시 토스트 알림이 뜹니다.</p></div></div>
+  <div class="step"><div class="step-num">3</div><div class="step-body"><h4>폴더 탐색</h4><p>폴더를 클릭하면 내부로 이동합니다. 상단 브레드크럼으로 상위 폴더로 돌아갈 수 있습니다.</p></div></div>
+</div>
+
+<div class="demo-box">
+<div class="demo-header"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span> 자료실 — 폴더 생성 & 파일 업로드 데모</div>
+<div class="demo-screen" id="demoCloud" style="min-height:260px">
+  <div class="sim-main" style="margin-left:0">
+    <div style="font-size:11px;color:var(--tx2);margin-bottom:10px">
+      <span style="color:var(--ac);cursor:pointer">루트</span> <span style="color:var(--tx3)">›</span> <span style="color:#fff;font-weight:600" id="simFolderName">교사 교육자료</span>
+    </div>
+    <div id="simFolderTree">
+      <div class="sim-folder" id="sf1"><span class="icon">📁</span> 우수수업 영상</div>
+      <div class="sim-folder" id="sf2"><span class="icon">📁</span> 티칭 스킬</div>
+    </div>
+    <div id="simUploadArea" style="margin-top:12px">
+      <div class="sim-folder" id="sf3"><span class="icon">📄</span> 발음교정_가이드.pdf <span style="color:var(--tx3);font-size:10px;margin-left:auto">2.3MB</span></div>
+      <div class="sim-folder" id="sf4"><span class="icon">🎬</span> 모범수업_김선생님.mp4 <span style="color:var(--tx3);font-size:10px;margin-left:auto">45.2MB</span></div>
+    </div>
+    <div style="margin-top:12px">
+      <div class="sim-upload-bar" id="simUploadBar"><div class="sim-upload-fill"></div></div>
+      <div class="sim-result" id="simUploadResult">✅ 업로드 완료: 모범수업_김선생님.mp4</div>
+    </div>
+  </div>
+</div>
+</div>
+</section>
+
+<!-- SEC 6 -->
+<section class="sec" id="a6">
+<h2 class="sec-title">수업 녹화</h2>
+<p class="sec-sub">ClassIn 수업 녹화를 가져와서 교사 교육 자료로 활용합니다.</p>
+
+<div class="steps">
+  <div class="step"><div class="step-num">1</div><div class="step-body"><h4>녹화 URL 가져오기</h4><p><strong>수업 녹화</strong> 메뉴 → 코스 ID와 수업 ID를 입력 → <strong>녹화 URL 가져오기</strong><br>ClassIn API에서 자동으로 녹화 재생 URL을 가져옵니다.</p></div></div>
+  <div class="step"><div class="step-num">2</div><div class="step-body"><h4>우수 수업 표시</h4><p>관리자가 특정 녹화를 <strong>⭐ 우수수업</strong>으로 지정하면 모든 강사에게 교육 자료로 공유됩니다.</p></div></div>
+</div>
+
+<div class="info warn"><span class="info-icon">⚠️</span><div>수업 생성 시 <strong>녹화(record)</strong> 설정이 되어 있어야만 녹화 URL을 가져올 수 있습니다. ClassIn 관리자에게 녹화 기능 활성화를 요청하세요.</div></div>
+</section>
+
+<!-- SEC 7 -->
+<section class="sec" id="a7">
+<h2 class="sec-title">진도 관리 / 지침서 / 정산</h2>
+<p class="sec-sub">학생 진도 추적, AI 수업 지침서 생성, 강사 수입 정산</p>
+
+<div class="steps">
+  <div class="step"><div class="step-num">1</div><div class="step-body"><h4>학생 진도 업데이트</h4><p><strong>학생진도/지침</strong> 메뉴에서 학생 UID + 교육과정 ID + 상태(예정/진행중/완료)를 입력합니다.<br>강사가 수업 후 직접 업데이트하거나, 관리자가 일괄 관리할 수 있습니다.</p></div></div>
+  <div class="step"><div class="step-num">2</div><div class="step-body"><h4>AI 수업 지침서</h4><p>교육과정 ID와 학생 모국어를 입력 → <strong>🤖 AI 지침 생성</strong><br>Claude AI가 수업 도입, 핵심 포인트, 연습 활동, 모국어별 실수 대처법을 자동 생성합니다.</p></div></div>
+  <div class="step"><div class="step-num">3</div><div class="step-body"><h4>정산/수입</h4><p><strong>정산/수입</strong> 메뉴에서 총 수업 수, 시간, 예상 수입을 확인합니다.<br>시급은 <strong>내 프로필</strong>에서 설정한 값으로 자동 계산됩니다.</p></div></div>
+</div>
+
+<div class="info important"><span class="info-icon">🔑</span><div>AI 지침서를 사용하려면 Render 환경변수에 <code>ANTHROPIC_API_KEY</code>가 설정되어 있어야 합니다.</div></div>
+</section>
+
+<!-- SEC 8 -->
+<section class="sec" id="a8">
+<h2 class="sec-title">단축키 & 꿀팁</h2>
+<div class="steps">
+  <div class="step"><div class="step-num">⌘</div><div class="step-body"><h4><span class="kbd">Ctrl</span> + <span class="kbd">K</span> — 커맨드 팔레트</h4><p>어떤 페이지에서든 즉시 열 수 있는 빠른 검색. 페이지 이동, 기능 검색이 가능합니다.</p></div></div>
+  <div class="step"><div class="step-num">🌓</div><div class="step-body"><h4>다크/라이트 모드 전환</h4><p>사이드바 하단의 ☀️ 버튼을 클릭하면 테마가 전환됩니다.</p></div></div>
+  <div class="step"><div class="step-num">📋</div><div class="step-body"><h4>UID 자동 전달</h4><p>강사/학생 등록 후 반환된 UID가 코스 생성, 수업 생성 폼에 자동 입력됩니다. 페이지를 이동하지 않아도 됩니다.</p></div></div>
+  <div class="step"><div class="step-num">📱</div><div class="step-body"><h4>모바일 지원</h4><p>모바일에서는 하단 탭바로 핵심 5개 메뉴에 빠르게 접근할 수 있습니다.</p></div></div>
+</div>
+</section>
+
+</div><!-- end admin manual -->
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- ═══ TEACHER MANUAL ═══════════════════════════════ -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="manual" id="manual-teacher">
+
+<nav class="toc"><h3>목차</h3>
+<div class="toc-list">
+  <a class="toc-item" href="#t1"><span class="num">1</span>로그인</a>
+  <a class="toc-item" href="#t2"><span class="num">2</span>대시보드</a>
+  <a class="toc-item" href="#t3"><span class="num">3</span>내 수업</a>
+  <a class="toc-item" href="#t4"><span class="num">4</span>학생 진도/지침</a>
+  <a class="toc-item" href="#t5"><span class="num">5</span>학습 자료실</a>
+  <a class="toc-item" href="#t6"><span class="num">6</span>프로필/피드백</a>
+</div></nav>
+
+<section class="sec" id="t1">
+<h2 class="sec-title">로그인</h2>
+<p class="sec-sub">관리자가 생성한 계정으로 포털에 접속합니다.</p>
+<div class="steps">
+  <div class="step"><div class="step-num">1</div><div class="step-body"><h4>아이디 / 비밀번호 입력</h4><p>관리자(원장)에게 받은 로그인 계정으로 접속합니다.<br>로그인 후 본인에게 배정된 수업과 학생만 표시됩니다.</p></div></div>
+</div>
+</section>
+
+<section class="sec" id="t2">
+<h2 class="sec-title">대시보드</h2>
+<p class="sec-sub">로그인하면 가장 먼저 보이는 화면입니다.</p>
+<div class="steps">
+  <div class="step"><div class="step-num">📊</div><div class="step-body"><h4>한눈에 보는 현황</h4><p>강사/학생/코스/수업/웹훅/피드백 숫자가 카드로 표시됩니다.<br><strong>각 카드를 클릭하면 해당 페이지로 바로 이동합니다.</strong></p></div></div>
+  <div class="step"><div class="step-num">📅</div><div class="step-body"><h4>다가오는 수업</h4><p>오른쪽에 예정된 수업 5개가 시간순으로 표시됩니다.<br>수업 10분 전에 브라우저 알림이 울립니다.</p></div></div>
+</div>
+</section>
+
+<section class="sec" id="t3">
+<h2 class="sec-title">내 수업</h2>
+<p class="sec-sub">캘린더에서 수업 일정을 확인하고 입장합니다.</p>
+<div class="steps">
+  <div class="step"><div class="step-num">1</div><div class="step-body"><h4>캘린더</h4><p>주간/월간 뷰로 수업 일정을 확인합니다.<br>🔵 파란색 = 수업 / 🟢 초록색 = 가용시간</p></div></div>
+  <div class="step"><div class="step-num">2</div><div class="step-body"><h4>수업 클릭 → 입장</h4><p>캘린더에서 수업을 클릭하면 입장 링크를 생성할 수 있습니다.<br>링크를 클릭하면 ClassIn 수업에 바로 입장합니다.</p></div></div>
+  <div class="step"><div class="step-num">3</div><div class="step-body"><h4>가용시간 등록</h4><p><strong>가용시간</strong> 메뉴에서 수업 가능한 날짜/시간을 등록하면<br>관리자가 캘린더에서 해당 시간을 확인하고 수업을 배정할 수 있습니다.</p></div></div>
+</div>
+
+<div class="demo-box">
+<div class="demo-header"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span> 수업 입장 플로우</div>
+<div class="demo-screen" id="demoEntry" style="min-height:180px">
+  <div class="sim-main" style="margin-left:0">
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:12px">
+      <div style="text-align:center;font-size:9px;color:var(--tx3);padding:4px" id="calMon">월</div>
+      <div style="text-align:center;font-size:9px;color:var(--tx3);padding:4px">화</div>
+      <div style="text-align:center;font-size:9px;color:var(--tx3);padding:4px">수</div>
+      <div style="text-align:center;font-size:9px;color:var(--tx3);padding:4px">목</div>
+      <div style="text-align:center;font-size:9px;color:var(--tx3);padding:4px">금</div>
+      <div style="text-align:center;font-size:9px;color:var(--tx3);padding:4px">토</div>
+      <div style="text-align:center;font-size:9px;color:var(--tx3);padding:4px">일</div>
+    </div>
+    <div id="simCalEvent" style="background:var(--acs);border-left:3px solid var(--ac);border-radius:0 6px 6px 0;padding:8px 12px;font-size:11px;color:var(--ac);cursor:pointer;opacity:0;transition:.5s">
+      📚 한국어 초급 A — 14:00~15:30
+    </div>
+    <div id="simEntryLink" style="margin-top:10px;opacity:0;transition:.5s">
+      <div style="font-size:11px;color:var(--ok)">✅ 입장 링크 생성됨</div>
+      <a style="font-size:11px;color:var(--ac);word-break:break-all">https://www.eeo.cn/class/login?token=abc123...</a>
+    </div>
+  </div>
+</div>
+</div>
+</section>
+
+<section class="sec" id="t4">
+<h2 class="sec-title">학생 진도 / 수업 지침</h2>
+<p class="sec-sub">내 학생들의 진도를 확인하고, AI가 생성한 수업 지침을 참고합니다.</p>
+<div class="steps">
+  <div class="step"><div class="step-num">1</div><div class="step-body"><h4>내 학생 진도 현황</h4><p><strong>학생진도/지침</strong> 메뉴를 클릭하면 본인에게 배정된 학생들의 진도가 자동으로 표시됩니다.<br><code>✅ 완료</code> <code>👉 진행 중 (오늘 수업)</code> <code>○ 예정</code></p></div></div>
+  <div class="step"><div class="step-num">2</div><div class="step-body"><h4>AI 수업 지침서</h4><p>교육과정 단원 ID와 학생 모국어를 입력 → <strong>🤖 AI 지침 생성</strong><br>약 10~20초 후 수업 도입, 핵심 포인트, 연습 활동, 모국어별 실수 대처법이 자동 생성됩니다.</p></div></div>
+  <div class="step"><div class="step-num">3</div><div class="step-body"><h4>수업 후 진도 업데이트</h4><p>수업이 끝나면 해당 단원의 상태를 <code>완료</code>로, 다음 단원을 <code>진행 중</code>으로 변경합니다.</p></div></div>
+</div>
+
+<div class="demo-box">
+<div class="demo-header"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span> 학생 진도 현황 데모</div>
+<div class="demo-screen" id="demoProgress" style="min-height:200px">
+  <div class="sim-main" style="margin-left:0">
+    <div style="background:var(--bg4);border-radius:8px;padding:12px;margin-bottom:8px">
+      <div style="font-size:12px;font-weight:700;color:#fff;margin-bottom:8px">👤 이영희 <span style="font-size:10px;color:var(--tx3)">UID: 3456789</span></div>
+      <div class="sim-folder show" style="opacity:1;transform:none"><span style="color:var(--ok)">✅</span> 초급 1과: 인사하기</div>
+      <div class="sim-folder show" id="simProgress2" style="opacity:1;transform:none"><span style="color:var(--ac)">👉</span> <strong style="color:var(--ac)">초급 2과: 숫자와 날짜</strong> <span style="font-size:10px;color:var(--wr)">← 오늘 수업</span></div>
+      <div class="sim-folder show" style="opacity:1;transform:none"><span style="color:var(--tx3)">○</span> 초급 3과: 장소와 위치</div>
+    </div>
+    <div id="simGuideContent" style="background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.15);border-radius:8px;padding:12px;font-size:11px;color:var(--pr);opacity:0;transition:.5s;line-height:1.6">
+      <div style="font-weight:700;margin-bottom:6px">🤖 AI 수업 지침서 — 2과 숫자와 날짜</div>
+      📌 고유어 수사(하나,둘,셋)와 한자어 수사(일,이,삼) 차이 비교<br>
+      📌 전화번호, 생년월일 실습 포함<br>
+      📌 중국어 화자: 이(二)/양(两) 구분 개념으로 연결하면 이해 빠름
+    </div>
+  </div>
+</div>
+</div>
+</section>
+
+<section class="sec" id="t5">
+<h2 class="sec-title">학습 자료실</h2>
+<p class="sec-sub">교재, 교육 영상 등을 열람합니다.</p>
+<div class="steps">
+  <div class="step"><div class="step-num">1</div><div class="step-body"><h4>폴더 탐색</h4><p><strong>자료실</strong> 메뉴에서 관리자가 업로드한 교재와 영상을 확인합니다.<br>폴더를 클릭하면 하위 내용으로 이동하고, 상단 경로를 클릭하면 상위로 돌아갑니다.</p></div></div>
+</div>
+</section>
+
+<section class="sec" id="t6">
+<h2 class="sec-title">프로필 / 피드백 / 기타</h2>
+<div class="steps">
+  <div class="step"><div class="step-num">👤</div><div class="step-body"><h4>내 프로필</h4><p>자기소개, 경력, 자격증, 소개 영상, <strong>시급</strong>을 설정합니다.<br>시급은 정산/수입 계산에 사용됩니다.</p></div></div>
+  <div class="step"><div class="step-num">⭐</div><div class="step-body"><h4>피드백/별점</h4><p>수업 후 학생 피드백을 작성하거나 별점 리뷰를 등록합니다.</p></div></div>
+  <div class="step"><div class="step-num">💬</div><div class="step-body"><h4>1:1 문의</h4><p>운영진(원장)에게 시스템 오류, 학생 문제 등을 문의합니다.</p></div></div>
+  <div class="step"><div class="step-num">🚫</div><div class="step-body"><h4>결석 증빙</h4><p>결석 사유와 증빙 이미지를 등록합니다.</p></div></div>
+</div>
+</section>
+
+</div><!-- end teacher manual -->
+
+</div><!-- end content -->
+
+<div style="text-align:center;padding:40px 20px 60px;color:var(--tx3);font-size:12px">
+  ClassIn 강사 포털 v4.0 — 매뉴얼 · 2026.04
+</div>
+
+<script>
+function switchManual(role,btn){
+  document.querySelectorAll('.role-btn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  document.querySelectorAll('.manual').forEach(m=>m.classList.remove('on'));
+  document.getElementById('manual-'+role).classList.add('on');
+  const badge=document.getElementById('heroBadge');
+  badge.className='hero-badge '+role;
+  badge.textContent=role==='admin'?'관리자 매뉴얼':'강사 매뉴얼';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// Scroll reveal
+const obs=new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');startDemo(e.target.id)}})
+},{threshold:0.15});
+document.querySelectorAll('.sec').forEach(s=>obs.observe(s));
+
+// Animated demos
+function startDemo(secId){
+  if(secId==='a1')runApiDemo();
+  if(secId==='a3')runClassDemo();
+  if(secId==='a5')runCloudDemo();
+  if(secId==='t3')runEntryDemo();
+  if(secId==='t4')runProgressDemo();
+}
+
+function typeText(el,text,delay){
+  return new Promise(r=>{
+    el.classList.add('typing');let i=0;
+    const t=setInterval(()=>{el.value=text.slice(0,++i);if(i>=text.length){clearInterval(t);el.classList.remove('typing');r()}},40);
+    setTimeout(()=>t,delay||0);
+  });
+}
+
+async function runApiDemo(){
+  const sid=document.getElementById('simSid');
+  const sec=document.getElementById('simSec');
+  await new Promise(r=>setTimeout(r,500));
+  await typeText(sid,'2339736');
+  await new Promise(r=>setTimeout(r,300));
+  await typeText(sec,'a8f2e4b1c9d3');
+  await new Promise(r=>setTimeout(r,400));
+  document.getElementById('simSaveBtn').style.background='var(--ac2)';
+  await new Promise(r=>setTimeout(r,600));
+  document.getElementById('simTestBtn').style.borderColor='var(--ac)';
+  document.getElementById('simTestBtn').style.color='var(--ac)';
+  await new Promise(r=>setTimeout(r,800));
+  const res=document.getElementById('simApiResult');
+  res.classList.add('show','ok');
+}
+
+async function runClassDemo(){
+  await new Promise(r=>setTimeout(r,400));
+  await typeText(document.getElementById('simCourseId'),'490583');
+  await typeText(document.getElementById('simClassName'),'한국어 초급 A');
+  await typeText(document.getElementById('simBegin'),'2026-04-15 14:00');
+  await typeText(document.getElementById('simEnd'),'2026-04-15 15:30');
+  await typeText(document.getElementById('simTeacher'),'1234567');
+  await new Promise(r=>setTimeout(r,500));
+  document.getElementById('simClassBtn').style.transform='scale(.95)';
+  await new Promise(r=>setTimeout(r,200));
+  document.getElementById('simClassBtn').style.transform='';
+  await new Promise(r=>setTimeout(r,400));
+  document.getElementById('simClassResult').classList.add('show','ok');
+}
+
+async function runCloudDemo(){
+  const folders=document.querySelectorAll('#demoCloud .sim-folder');
+  for(let i=0;i<folders.length;i++){
+    await new Promise(r=>setTimeout(r,300));
+    folders[i].classList.add('show');
+  }
+  await new Promise(r=>setTimeout(r,500));
+  document.getElementById('simUploadBar').classList.add('animate');
+  await new Promise(r=>setTimeout(r,2200));
+  document.getElementById('simUploadResult').classList.add('show','ok');
+}
+
+async function runEntryDemo(){
+  await new Promise(r=>setTimeout(r,600));
+  document.getElementById('simCalEvent').style.opacity='1';
+  await new Promise(r=>setTimeout(r,1000));
+  document.getElementById('simCalEvent').style.background='rgba(108,159,255,.25)';
+  await new Promise(r=>setTimeout(r,800));
+  document.getElementById('simEntryLink').style.opacity='1';
+}
+
+async function runProgressDemo(){
+  await new Promise(r=>setTimeout(r,800));
+  document.getElementById('simProgress2').style.background='var(--acs)';
+  document.getElementById('simProgress2').style.borderRadius='6px';
+  document.getElementById('simProgress2').style.padding='6px 8px';
+  await new Promise(r=>setTimeout(r,1200));
+  document.getElementById('simGuideContent').style.opacity='1';
+}
+</script>
+</body>
+</html>
