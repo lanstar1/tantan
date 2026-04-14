@@ -17,8 +17,9 @@ if DB_URL:
         return psycopg2.connect(DB_URL.replace("postgres://","postgresql://",1), cursor_factory=RealDictCursor)
 
     def init_db():
-        with _conn() as c:
-            cur = c.cursor()
+        try:
+            with _conn() as c:
+                cur = c.cursor()
             cur.execute("""CREATE TABLE IF NOT EXISTS accounts (
                 username TEXT PRIMARY KEY, password_hash TEXT NOT NULL, role TEXT DEFAULT 'teacher',
                 display_name TEXT, classin_uid TEXT DEFAULT '', timezone TEXT DEFAULT 'Asia/Seoul',
@@ -86,6 +87,9 @@ if DB_URL:
                 teacher_uid TEXT DEFAULT '', is_featured BOOLEAN DEFAULT FALSE,
                 created_at TIMESTAMPTZ DEFAULT NOW())""")
             c.commit()
+        except Exception as e:
+            print(f"[DB] WARNING: PostgreSQL init failed: {e}")
+            print("[DB] App will start but DB operations may fail. Check DATABASE_URL.")
 
     # Credentials
     def get_creds():
