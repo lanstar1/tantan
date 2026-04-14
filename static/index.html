@@ -262,10 +262,22 @@ select.fi{cursor:pointer;appearance:none;background-image:url("data:image/svg+xm
 </div>
 
 <div class="pg" id="pg-materials">
-    <div class="pg-hd"><h2>학습 자료실</h2><p>ClassIn 클라우드 드라이브 파일 조회</p></div>
-    <div class="cd"><div class="cd-t">☁️ 클라우드 드라이브</div>
-        <div class="bg"><button class="btn btn-p" onclick="loadCloud()">📁 루트 폴더 조회</button></div>
-        <div id="cloudList" style="margin-top:12px;font-size:13px;color:var(--tx2)">-</div></div>
+    <div class="pg-hd"><h2>학습 자료실</h2><p>ClassIn 클라우드 드라이브 — 수업 교재 업로드 및 관리</p></div>
+    <div class="cd">
+        <div class="cd-t" style="justify-content:space-between;flex-wrap:wrap;gap:8px">
+            <span>☁️ 클라우드 드라이브</span>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+                <button class="btn btn-o" style="font-size:11px;padding:5px 12px" onclick="cloudCreateFolder()">📁 새 폴더</button>
+                <label class="btn btn-p" style="font-size:11px;padding:5px 12px;cursor:pointer">📎 파일 업로드<input type="file" id="cloudFileInput" style="display:none" onchange="cloudUploadFile(this)" multiple></label>
+                <button class="btn btn-o" style="font-size:11px;padding:5px 12px" onclick="cloudRefresh()">🔄</button>
+            </div>
+        </div>
+        <div id="cloudBreadcrumb" style="font-size:12px;color:var(--tx2);margin-bottom:12px;display:flex;align-items:center;gap:4px;flex-wrap:wrap"></div>
+        <div id="cloudList" style="font-size:13px;color:var(--tx2)">
+            <div class="empty"><p>루트 폴더를 불러오는 중...</p></div>
+        </div>
+        <div id="cloudStatus" style="margin-top:8px;font-size:11px;color:var(--tx2)"></div>
+    </div>
 </div>
 
 <div class="pg" id="pg-feedback">
@@ -380,7 +392,7 @@ document.querySelectorAll('.ni').forEach(n=>n.addEventListener('click',()=>{
     if(p==='courses')loadCourses();if(p==='classes')loadClasses();if(p==='webhooks')loadWH();
     if(p==='feedback'){loadFB();loadRatings();}if(p==='accounts')loadAccounts();if(p==='calendar')renderCalendar();
     if(p==='availability')loadAvail();if(p==='absences')loadAbsences();
-    if(p==='myprofile')loadMyProfile();if(p==='announcements')loadAnn();if(p==='inquiries')loadInq();if(p==='settlement')loadIncome();
+    if(p==='myprofile')loadMyProfile();if(p==='announcements')loadAnn();if(p==='inquiries')loadInq();if(p==='settlement')loadIncome();if(p==='materials')loadCloud();
 }));
 
 async function saveCreds(){try{await api('/api/credentials','POST',{sid:document.getElementById('inSID').value.trim(),secret:document.getElementById('inSEC').value.trim()});sR(document.getElementById('setR'),true,'저장 완료')}catch(e){sR(document.getElementById('setR'),false,e.message)}}
@@ -405,7 +417,108 @@ async function addAvail(){const dt=document.getElementById('avDate').value,st=do
 async function loadAvail(){try{const d=await api('/api/availability');const el=document.getElementById('avList');if(!d.slots.length){el.innerHTML='<div class="empty"><p>등록된 가용시간이 없습니다</p></div>';return}let h='<table class="tbl"><tr><th>날짜</th><th>시작</th><th>종료</th><th>강사</th><th>상태</th><th></th></tr>';d.slots.forEach(a=>{h+=`<tr><td style="color:var(--txb)">${a.date}</td><td>${a.startTime}</td><td>${a.endTime}</td><td>${a.teacherName}</td><td style="color:${a.status==='available'?'var(--ok)':'var(--ac)'}">● ${a.status==='available'?'가용':'예약됨'}</td><td><button class="btn btn-d" onclick="delAvail(${a.id})">삭제</button></td></tr>`});el.innerHTML=h+'</table><div style="font-size:11px;color:var(--tx2);margin-top:6px">총 '+d.total+'건</div>'}catch{}}
 async function delAvail(id){if(!confirm('가용시간 삭제?'))return;try{await api('/api/availability/'+id,'DELETE');loadAvail()}catch(e){alert(e.message)}}
 async function loadWH(){try{const d=await api('/api/webhooks?limit=30');const el=document.getElementById('whList');if(!d.webhooks.length){el.innerHTML='<div class="empty"><p>수신된 웹훅이 없습니다</p></div>';return}let h='<table class="tbl"><tr><th>시간</th><th>Cmd</th><th>SID</th></tr>';d.webhooks.reverse().forEach(w=>{h+=`<tr><td>${(w.timestamp||'').slice(0,19)}</td><td style="color:var(--ac)">${w.cmd}</td><td>${w.sid||''}</td></tr>`});el.innerHTML=h+`</table><div style="font-size:11px;color:var(--tx2);margin-top:6px">총 ${d.total}건</div>`}catch{}}
-async function loadCloud(){try{const d=await api('/api/cloud/top-folder');const el=document.getElementById('cloudList');if(d.success&&d.data){const fid=typeof d.data==='object'?d.data.folderId||d.data:d.data;el.innerHTML=`<div style="color:var(--ok)">루트 폴더 ID: ${fid}</div>`;const list=await api('/api/cloud/list/'+fid);if(list.data&&Array.isArray(list.data)){let h='<table class="tbl" style="margin-top:8px"><tr><th>이름</th><th>타입</th></tr>';list.data.forEach(f=>{h+=`<tr><td style="color:var(--txb)">${f.name||f.fileName||JSON.stringify(f)}</td><td>${f.type||''}</td></tr>`});el.innerHTML+=h+'</table>'}else el.innerHTML+=`<pre class="rj">${JSON.stringify(list.data,null,2)}</pre>`}else el.innerHTML=`<span style="color:var(--er)">${d.raw?JSON.stringify(d.raw):'조회 실패'}</span>`}catch(e){document.getElementById('cloudList').textContent=e.message}}
+// Cloud Drive - Full File Manager
+let cloudRootId=null, cloudCurrentId=null, cloudPath=[];
+async function loadCloud(){
+    try{
+        if(!cloudRootId){
+            const d=await api('/api/cloud/top-folder');
+            if(d.success&&d.data){cloudRootId=typeof d.data==='object'?(d.data.folderId||d.data):d.data}
+            else{document.getElementById('cloudList').innerHTML=`<span style="color:var(--er)">${d.raw?JSON.stringify(d.raw):'루트 폴더 조회 실패'}</span>`;return}
+        }
+        if(!cloudCurrentId){cloudCurrentId=cloudRootId;cloudPath=[{id:cloudRootId,name:'루트'}]}
+        await cloudNavigate(cloudCurrentId)
+    }catch(e){document.getElementById('cloudList').innerHTML=`<span style="color:var(--er)">${e.message}</span>`}
+}
+async function cloudNavigate(folderId){
+    cloudCurrentId=folderId;
+    const el=document.getElementById('cloudList');
+    el.innerHTML='<div style="padding:20px;text-align:center;color:var(--tx3)">불러오는 중...</div>';
+    renderBreadcrumb();
+    try{
+        const d=await api('/api/cloud/list/'+folderId);
+        if(!d.success){el.innerHTML=`<span style="color:var(--er)">조회 실패: ${JSON.stringify(d.raw||'')}</span>`;return}
+        const items=d.data;
+        if(!items||!Array.isArray(items)||!items.length){el.innerHTML='<div class="empty"><p>이 폴더는 비어 있습니다</p><p style="font-size:11px">파일을 업로드하거나 새 폴더를 만들어 보세요</p></div>';return}
+        let h='<table class="tbl"><tr><th style="width:40px"></th><th>이름</th><th style="width:80px">타입</th><th style="width:100px">크기</th><th style="width:70px"></th></tr>';
+        items.forEach(f=>{
+            const isFolder=f.type==='folder'||f.fileType==='folder'||f.folderId;
+            const name=f.name||f.fileName||f.folderName||'알 수 없음';
+            const fid=f.folderId||f.fileId||f.id||'';
+            const size=f.fileSize?formatFileSize(f.fileSize):'—';
+            const ext=name.split('.').pop().toLowerCase();
+            const icon=isFolder?'📁':getFileIcon(ext);
+            if(isFolder){
+                h+=`<tr style="cursor:pointer" onclick="cloudEnterFolder('${fid}','${name.replace(/'/g,"\\'")}')"><td>${icon}</td><td style="color:var(--txb);font-weight:500">${name}</td><td style="color:var(--tx3)">폴더</td><td>—</td><td><button class="btn btn-d" onclick="event.stopPropagation();cloudDeleteFolder('${fid}','${name.replace(/'/g,"\\'")}')">삭제</button></td></tr>`
+            }else{
+                h+=`<tr><td>${icon}</td><td style="color:var(--txb)">${name}</td><td style="color:var(--tx3)">${ext.toUpperCase()}</td><td>${size}</td><td><button class="btn btn-d" onclick="cloudDeleteFile('${fid}','${name.replace(/'/g,"\\'")}')">삭제</button></td></tr>`
+            }
+        });
+        el.innerHTML=h+'</table>';
+        document.getElementById('cloudStatus').textContent=`${items.length}개 항목`;
+    }catch(e){el.innerHTML=`<span style="color:var(--er)">${e.message}</span>`}
+}
+function renderBreadcrumb(){
+    const bc=document.getElementById('cloudBreadcrumb');
+    bc.innerHTML=cloudPath.map((p,i)=>{
+        if(i===cloudPath.length-1)return `<span style="color:var(--txb);font-weight:600">${p.name}</span>`;
+        return `<span style="cursor:pointer;color:var(--ac)" onclick="cloudGoBack(${i})">${p.name}</span><span style="color:var(--tx3)">›</span>`
+    }).join('');
+}
+function cloudEnterFolder(fid,name){
+    cloudPath.push({id:fid,name:name});
+    cloudNavigate(fid);
+}
+function cloudGoBack(index){
+    cloudPath=cloudPath.slice(0,index+1);
+    cloudNavigate(cloudPath[index].id);
+}
+function cloudRefresh(){cloudNavigate(cloudCurrentId)}
+async function cloudCreateFolder(){
+    const name=prompt('새 폴더 이름을 입력하세요:');
+    if(!name)return;
+    if(!cloudCurrentId){await loadCloud();if(!cloudCurrentId)return}
+    try{
+        const d=await api('/api/cloud/create-folder','POST',{parentId:cloudCurrentId,folderName:name});
+        if(d.success){showToast('폴더 생성 완료: '+name,'ok');cloudRefresh()}
+        else showToast('생성 실패: '+(d.message||''),'err',6000)
+    }catch(e){showToast('에러: '+e.message,'err',6000)}
+}
+async function cloudUploadFile(input){
+    if(!input.files.length)return;
+    if(!cloudCurrentId){await loadCloud();if(!cloudCurrentId)return}
+    const status=document.getElementById('cloudStatus');
+    for(const file of input.files){
+        status.innerHTML=`<span style="color:var(--ac)">📎 업로드 중: ${file.name} (${formatFileSize(file.size)})...</span>`;
+        try{
+            const fd=new FormData();
+            fd.append('folder_id',cloudCurrentId);
+            fd.append('file',file);
+            const r=await fetch('/api/cloud/upload',{method:'POST',headers:{'Authorization':'Bearer '+TOKEN},body:fd});
+            if(!r.ok){const e=await r.json().catch(()=>({detail:'업로드 실패'}));throw new Error(e.detail||'실패')}
+            const d=await r.json();
+            if(d.success){showToast('업로드 완료: '+file.name,'ok')}
+            else{showToast('업로드 실패: '+(d.message||''),'err',6000)}
+        }catch(e){showToast('에러: '+e.message,'err',6000)}
+    }
+    status.textContent='';
+    input.value='';
+    cloudRefresh();
+}
+async function cloudDeleteFile(fileId,name){
+    if(!confirm('파일 "'+name+'"을(를) 삭제하시겠습니까?'))return;
+    try{const d=await api('/api/cloud/file/'+fileId,'DELETE');
+    if(d.success){showToast('삭제 완료: '+name,'ok');cloudRefresh()}
+    else showToast('삭제 실패: '+(d.message||''),'err',6000)}catch(e){showToast('에러: '+e.message,'err',6000)}
+}
+async function cloudDeleteFolder(folderId,name){
+    if(!confirm('폴더 "'+name+'"을(를) 삭제하시겠습니까?\n(폴더 안의 파일도 함께 삭제됩니다)'))return;
+    try{const d=await api('/api/cloud/folder/'+folderId,'DELETE');
+    if(d.success){showToast('삭제 완료: '+name,'ok');cloudRefresh()}
+    else showToast('삭제 실패: '+(d.message||''),'err',6000)}catch(e){showToast('에러: '+e.message,'err',6000)}
+}
+function formatFileSize(bytes){if(!bytes||isNaN(bytes))return '—';bytes=Number(bytes);if(bytes<1024)return bytes+'B';if(bytes<1048576)return(bytes/1024).toFixed(1)+'KB';if(bytes<1073741824)return(bytes/1048576).toFixed(1)+'MB';return(bytes/1073741824).toFixed(1)+'GB'}
+function getFileIcon(ext){const m={pdf:'📄',doc:'📝',docx:'📝',ppt:'📊',pptx:'📊',xls:'📈',xlsx:'📈',jpg:'🖼️',jpeg:'🖼️',png:'🖼️',gif:'🖼️',mp4:'🎬',avi:'🎬',mov:'🎬',mp3:'🎵',wav:'🎵',zip:'📦',rar:'📦',txt:'📃',hwp:'📝'};return m[ext]||'📎'}
 async function submitFB(){try{const d=await api('/api/feedback/submit','POST',{courseId:document.getElementById('fbCo').value,classId:document.getElementById('fbCl').value,teacherUid:document.getElementById('fbTu').value,studentUid:document.getElementById('fbSu').value,comment:document.getElementById('fbCm').value});sR(document.getElementById('fbR'),d.success,d.message);if(d.success)loadFB()}catch(e){sR(document.getElementById('fbR'),false,e.message)}}
 async function loadFB(){try{const d=await api('/api/feedbacks');const el=document.getElementById('fbList');if(!d.feedbacks.length){el.innerHTML='<div class="empty"><p>피드백 내역이 없습니다</p></div>';return}let h='<table class="tbl"><tr><th>날짜</th><th>학생</th><th>내용</th></tr>';d.feedbacks.forEach(f=>{h+=`<tr><td>${(f.date||'').slice(0,10)}</td><td>${f.studentUid}</td><td style="color:var(--txb)">${f.comment}</td></tr>`});el.innerHTML=h+'</table>'}catch{}}
 async function loadDash(){try{const d=await api('/api/dashboard');document.getElementById('d-t').textContent=d.teachers;document.getElementById('d-s').textContent=d.students;document.getElementById('d-c').textContent=d.courses;document.getElementById('d-cl').textContent=d.classes;document.getElementById('d-w').textContent=d.webhooks;document.getElementById('d-f').textContent=d.feedbacks;document.getElementById('dWel').textContent=MY_NAME+'님 환영합니다'}catch{}try{const s=await api('/api/webhooks/stats');const ctx=document.getElementById('whChart');if(window._whChart)window._whChart.destroy();if(s.stats.length){window._whChart=new Chart(ctx,{type:'doughnut',data:{labels:s.stats.map(x=>x.cmd),datasets:[{data:s.stats.map(x=>x.cnt),backgroundColor:['#6c9fff','#4ade80','#fbbf24','#f87171','#a78bfa','#fb923c','#38bdf8','#e879f9']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#7f879f',font:{size:11,family:'Pretendard Variable'}}}}}})}}catch{}try{const u=await api('/api/classes/upcoming');const el=document.getElementById('upcomingList');if(!u.classes.length){el.textContent='예정된 수업 없음';return}el.innerHTML=u.classes.slice(0,5).map(c=>`<div style="padding:8px 0;border-bottom:1px solid var(--bd0)"><strong style="color:var(--txb)">${c.name}</strong> <span style="color:var(--tx2)">—</span> ${fmtTime(c.begin)}</div>`).join('')}catch{}if('Notification' in window&&Notification.permission==='default')Notification.requestPermission();checkUpcomingNotif()}

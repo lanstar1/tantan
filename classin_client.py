@@ -82,9 +82,23 @@ async def call_cloud_v1(action, sid, secret, params=None):
         try: return r.json()
         except: return {"error_info": {"errno": -1, "error": f"HTTP {r.status_code}"}}
 
+async def upload_file_cloud(sid, secret, folder_id, file_bytes, filename):
+    ts = _ts()
+    data = {"SID": sid, "timeStamp": str(ts), "safeKey": _v1_safe_key(secret, ts), "folderId": str(folder_id)}
+    files = {"Filedata": (filename, file_bytes)}
+    async with httpx.AsyncClient(timeout=120) as c:
+        r = await c.post(f"{API_BASE}/partner/api/cloud.api.php?action=uploadFile", data=data, files=files)
+        try: return r.json()
+        except: return {"error_info": {"errno": -1, "error": f"HTTP {r.status_code}"}}
+
 async def get_top_folder(sid, secret): return await call_cloud_v1("getTopFolderId", sid, secret)
 async def get_folder_list(sid, secret, folder_id): return await call_cloud_v1("getFolderList", sid, secret, {"folderId": str(folder_id)})
 async def get_cloud_list(sid, secret, folder_id): return await call_cloud_v1("getCloudList", sid, secret, {"folderId": str(folder_id)})
+async def create_folder(sid, secret, parent_id, name): return await call_cloud_v1("createFolder", sid, secret, {"parentId": str(parent_id), "folderName": name})
+async def rename_file(sid, secret, file_id, name): return await call_cloud_v1("renameFile", sid, secret, {"fileId": str(file_id), "fileName": name})
+async def del_file(sid, secret, file_id): return await call_cloud_v1("delFile", sid, secret, {"fileId": str(file_id)})
+async def rename_folder(sid, secret, folder_id, name): return await call_cloud_v1("renameFolder", sid, secret, {"folderId": str(folder_id), "folderName": name})
+async def del_folder(sid, secret, folder_id): return await call_cloud_v1("delFolder", sid, secret, {"folderId": str(folder_id)})
 
 # Webhook
 def verify_webhook_safe_key(secret, ts, sk): return hashlib.md5(f"{secret}{ts}".encode()).hexdigest() == sk

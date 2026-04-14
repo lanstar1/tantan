@@ -1,5 +1,5 @@
-"""ClassIn Teacher Portal v3.0 - Full Features"""
-from fastapi import FastAPI, HTTPException, Request, Depends
+"""ClassIn Teacher Portal v4.0 - Full Features"""
+from fastapi import FastAPI, HTTPException, Request, Depends, UploadFile, File, Form
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from pydantic import BaseModel
@@ -8,7 +8,8 @@ import hashlib, secrets, io, csv
 from classin_client import (test_connection, call_v1, call_v2, parse_v1, register_user, add_teacher, add_student,
     create_course, create_class, delete_class, add_course_student, add_course_teacher,
     get_login_link, verify_webhook_safe_key, update_class_student_comment,
-    get_top_folder, get_folder_list, get_cloud_list)
+    get_top_folder, get_folder_list, get_cloud_list, upload_file_cloud,
+    create_folder, rename_file, del_file, rename_folder, del_folder)
 import db
 
 app = FastAPI(title="ClassIn Teacher Portal", version="3.0.0")
@@ -241,6 +242,55 @@ async def cloud_list(folder_id:str, s=Depends(_auth)):
     result = await get_cloud_list(*_creds(), folder_id)
     e,err,data=parse_v1(result)
     return {"success":e==1,"data":data,"raw":result}
+
+@app.get("/api/cloud/folders/{folder_id}")
+async def cloud_folders(folder_id:str, s=Depends(_auth)):
+    result = await get_folder_list(*_creds(), folder_id)
+    e,err,data=parse_v1(result)
+    return {"success":e==1,"data":data,"raw":result}
+
+@app.post("/api/cloud/create-folder")
+async def cloud_create_folder(request: Request, s=Depends(_auth)):
+    body = await request.json()
+    pid = body.get("parentId",""); name = body.get("folderName","")
+    if not pid or not name: raise HTTPException(400, "parentId, folderName 필수")
+    result = await create_folder(*_creds(), pid, name)
+    e,err,data=parse_v1(result)
+    return {"success":e==1,"data":data,"message":err,"raw":result}
+
+@app.post("/api/cloud/upload")
+async def cloud_upload(folder_id: str = Form(...), file: UploadFile = File(...), s=Depends(_auth)):
+    content = await file.read()
+    if len(content) > 500*1024*1024: raise HTTPException(400, "파일 크기 500MB 초과")
+    result = await upload_file_cloud(*_creds(), folder_id, content, file.filename)
+    e,err,data=parse_v1(result)
+    return {"success":e==1,"fileId":data,"message":err,"raw":result}
+
+@app.post("/api/cloud/rename-file")
+async def cloud_rename_file(request: Request, s=Depends(_auth)):
+    body = await request.json()
+    result = await rename_file(*_creds(), body.get("fileId",""), body.get("fileName",""))
+    e,err,data=parse_v1(result)
+    return {"success":e==1,"message":err,"raw":result}
+
+@app.delete("/api/cloud/file/{file_id}")
+async def cloud_del_file(file_id:str, s=Depends(_auth)):
+    result = await del_file(*_creds(), file_id)
+    e,err,data=parse_v1(result)
+    return {"success":e==1,"message":err,"raw":result}
+
+@app.post("/api/cloud/rename-folder")
+async def cloud_rename_folder(request: Request, s=Depends(_auth)):
+    body = await request.json()
+    result = await rename_folder(*_creds(), body.get("folderId",""), body.get("folderName",""))
+    e,err,data=parse_v1(result)
+    return {"success":e==1,"message":err,"raw":result}
+
+@app.delete("/api/cloud/folder/{folder_id}")
+async def cloud_del_folder(folder_id:str, s=Depends(_auth)):
+    result = await del_folder(*_creds(), folder_id)
+    e,err,data=parse_v1(result)
+    return {"success":e==1,"message":err,"raw":result}
 
 # ═══ Webhook ═════════════════════════════════════
 @app.post("/api/webhook/classin")
