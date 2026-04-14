@@ -72,10 +72,19 @@ async def get_login_link(sid, secret, uid): return await call_v1("getLoginLinked
 async def update_class_student_comment(sid, secret, cid, clid, tuid, suid, comment):
     return await call_v1("updateClassStudentComment", sid, secret, {"courseId": str(cid), "classId": str(clid), "teacherUid": str(tuid), "studentUid": str(suid), "comment": comment})
 
-# Cloud Drive
-async def get_top_folder(sid, secret): return await call_v1("getTopFolderId", sid, secret)
-async def get_folder_list(sid, secret, folder_id): return await call_v1("getFolderList", sid, secret, {"folderId": str(folder_id)})
-async def get_cloud_list(sid, secret, folder_id): return await call_v1("getCloudList", sid, secret, {"folderId": str(folder_id)})
+# Cloud Drive (uses cloud.api.php, NOT course.api.php)
+async def call_cloud_v1(action, sid, secret, params=None):
+    ts = _ts()
+    data = {"SID": sid, "timeStamp": str(ts), "safeKey": _v1_safe_key(secret, ts)}
+    if params: data.update(params)
+    async with httpx.AsyncClient(timeout=30) as c:
+        r = await c.post(f"{API_BASE}/partner/api/cloud.api.php?action={action}", data=data)
+        try: return r.json()
+        except: return {"error_info": {"errno": -1, "error": f"HTTP {r.status_code}"}}
+
+async def get_top_folder(sid, secret): return await call_cloud_v1("getTopFolderId", sid, secret)
+async def get_folder_list(sid, secret, folder_id): return await call_cloud_v1("getFolderList", sid, secret, {"folderId": str(folder_id)})
+async def get_cloud_list(sid, secret, folder_id): return await call_cloud_v1("getCloudList", sid, secret, {"folderId": str(folder_id)})
 
 # Webhook
 def verify_webhook_safe_key(secret, ts, sk): return hashlib.md5(f"{secret}{ts}".encode()).hexdigest() == sk
