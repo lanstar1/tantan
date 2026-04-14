@@ -68,7 +68,7 @@ select.fi{cursor:pointer;appearance:none;background-image:url("data:image/svg+xm
 .tbl td{padding:10px;border-bottom:1px solid var(--bd0);transition:background .15s}.tbl tr:hover td{background:var(--ac-s)}
 .tbl .uid{color:var(--ac);font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:500}
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:16px}
-.stat{background:var(--bg2);border:1px solid var(--bd0);border-radius:14px;padding:18px;text-align:center;transition:border-color .2s,transform .2s}.stat:hover{border-color:var(--bd1);transform:translateY(-2px)}
+.stat{background:var(--bg2);border:1px solid var(--bd0);border-radius:14px;padding:18px;text-align:center;transition:border-color .2s,transform .2s;cursor:pointer}.stat:hover{border-color:var(--bd1);transform:translateY(-2px)}
 .stat .num{font-size:28px;font-weight:700;color:var(--ac);letter-spacing:-1px}.stat .lbl{font-size:11px;color:var(--tx2);margin-top:4px;font-weight:500}
 .login-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;background:var(--bg0)}
 .login-box{background:var(--bg2);border:1px solid var(--bd0);border-radius:20px;padding:40px;width:400px;max-width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3)}
@@ -101,7 +101,7 @@ select.fi{cursor:pointer;appearance:none;background-image:url("data:image/svg+xm
 .mobile-tabbar .mtab{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 10px;border-radius:10px;cursor:pointer;font-size:10px;font-weight:600;color:var(--tx3);transition:.15s;border:none;background:none;flex:1;font-family:inherit}
 .mobile-tabbar .mtab:hover,.mobile-tabbar .mtab.on{color:var(--ac);background:var(--ac-s)}.mobile-tabbar .mtab svg{width:20px;height:20px}
 .empty{text-align:center;padding:40px 20px;color:var(--tx3)}.empty svg{width:48px;height:48px;margin-bottom:12px;opacity:.4}.empty p{font-size:13px;margin-bottom:16px}
-.ao{display:none}
+/* .ao elements visibility controlled by JS showApp() */
 @media(max-width:1024px){.side{width:220px}.main{margin-left:220px;padding:24px 20px 100px}}
 @media(max-width:768px){.side{transform:translateX(-100%);width:280px;box-shadow:8px 0 30px rgba(0,0,0,.3)}.side.open{transform:translateX(0)}.main{margin-left:0;padding:16px 16px 120px;padding-top:60px}.menu-toggle{display:block}.mobile-tabbar{display:block}.stats{grid-template-columns:repeat(2,1fr)}.row,.row3{grid-template-columns:1fr}.tab-group.on{display:flex;flex-wrap:wrap}}
 </style>
@@ -165,7 +165,7 @@ select.fi{cursor:pointer;appearance:none;background-image:url("data:image/svg+xm
 
 <div class="pg on" id="pg-dashboard">
     <div class="pg-hd"><h2>대시보드</h2><p id="dWel">환영합니다</p></div>
-    <div class="stats"><div class="stat"><div class="num" id="d-t">0</div><div class="lbl">강사</div></div><div class="stat"><div class="num" id="d-s">0</div><div class="lbl">학생</div></div><div class="stat"><div class="num" id="d-c">0</div><div class="lbl">코스</div></div><div class="stat"><div class="num" id="d-cl">0</div><div class="lbl">수업</div></div><div class="stat"><div class="num" id="d-w">0</div><div class="lbl">웹훅</div></div><div class="stat"><div class="num" id="d-f">0</div><div class="lbl">피드백</div></div></div>
+    <div class="stats"><div class="stat" onclick="navTo('teachers');loadUsers('teacher')"><div class="num" id="d-t">0</div><div class="lbl">강사</div></div><div class="stat" onclick="navTo('students');loadUsers('student')"><div class="num" id="d-s">0</div><div class="lbl">학생</div></div><div class="stat" onclick="navTo('courses');loadCourses()"><div class="num" id="d-c">0</div><div class="lbl">코스</div></div><div class="stat" onclick="navTo('classes');loadClasses()"><div class="num" id="d-cl">0</div><div class="lbl">수업</div></div><div class="stat" onclick="navTo('webhooks');loadWH()"><div class="num" id="d-w">0</div><div class="lbl">웹훅</div></div><div class="stat" onclick="navTo('feedback');loadFB();loadRatings()"><div class="num" id="d-f">0</div><div class="lbl">피드백</div></div></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px"><div class="cd"><div class="cd-t">📈 웹훅 이벤트 분포</div><div class="chart-wrap"><canvas id="whChart"></canvas></div></div><div class="cd"><div class="cd-t">🔔 다가오는 수업</div><div id="upcomingList" style="font-size:13px;color:var(--tx2)">-</div></div></div>
 </div>
 
@@ -555,11 +555,20 @@ function switchTab(group,target){
 }
 /* ═══ NEW: navTo ═══ */
 function navTo(page){
+    const groupMap={teachers:'users',students:'users',accounts:'users',calendar:'lessons',courses:'lessons',classes:'lessons',availability:'lessons',settings:'system',webhooks:'system',announcements:'comm',inquiries:'comm'};
+    const groupNav={users:'teachers',lessons:'calendar',system:'settings',comm:'announcements'};
     document.querySelectorAll('.ni').forEach(x=>x.classList.remove('on'));
     document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
     document.querySelectorAll('.tab-group').forEach(t=>t.classList.remove('on'));
-    const ni=document.querySelector(`.ni[data-p="${page}"]`);
-    if(ni){ni.classList.add('on');const grp=ni.dataset.group;if(grp){const tg=document.getElementById('tg-'+grp);if(tg){tg.classList.add('on');tg.querySelectorAll('.tab').forEach(t=>{const oc=t.getAttribute('onclick')||'';t.classList.toggle('on',oc.includes("'"+page+"'"))})}}}
+    const grp=groupMap[page];
+    if(grp){
+        const tg=document.getElementById('tg-'+grp);
+        if(tg){tg.classList.add('on');tg.querySelectorAll('.tab').forEach(t=>{const oc=t.getAttribute('onclick')||'';t.classList.toggle('on',oc.includes("'"+page+"'"))})}
+        const navPage=groupNav[grp];
+        if(navPage){const ni=document.querySelector(`.ni[data-p="${navPage}"]`);if(ni)ni.classList.add('on')}
+    }else{
+        const ni=document.querySelector(`.ni[data-p="${page}"]`);if(ni)ni.classList.add('on');
+    }
     const pg=document.getElementById('pg-'+page);if(pg)pg.classList.add('on');
 }
 /* ═══ NEW: Mobile nav ═══ */
