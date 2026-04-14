@@ -5,6 +5,11 @@ from datetime import datetime, timedelta
 DB_URL = os.environ.get("DATABASE_URL", "")
 SESSION_EXPIRY_DAYS = 365  # 1 year
 
+# Validate that DATABASE_URL is actually a PostgreSQL connection string
+if DB_URL and not (DB_URL.startswith("postgres://") or DB_URL.startswith("postgresql://")):
+    print(f"[DB] WARNING: DATABASE_URL is not a PostgreSQL URL (got: {DB_URL[:50]}...), falling back to in-memory mode")
+    DB_URL = ""
+
 if DB_URL:
     import psycopg2
     from psycopg2.extras import RealDictCursor
