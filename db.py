@@ -61,6 +61,25 @@ if DB_URL:
                 id SERIAL PRIMARY KEY, class_id TEXT, course_id TEXT,
                 student_uid TEXT, teacher_uid TEXT, score INTEGER DEFAULT 5,
                 review TEXT DEFAULT '', created_at TIMESTAMPTZ DEFAULT NOW())""")
+            cur.execute("""CREATE TABLE IF NOT EXISTS curriculum (
+                id SERIAL PRIMARY KEY, course_level TEXT NOT NULL, unit_number INTEGER NOT NULL,
+                unit_title TEXT NOT NULL, description TEXT DEFAULT '', key_points TEXT DEFAULT '[]',
+                materials_ref TEXT DEFAULT '', created_at TIMESTAMPTZ DEFAULT NOW(),
+                updated_at TIMESTAMPTZ DEFAULT NOW())""")
+            cur.execute("""CREATE TABLE IF NOT EXISTS student_progress (
+                id SERIAL PRIMARY KEY, student_uid TEXT NOT NULL, course_id TEXT DEFAULT '',
+                curriculum_id INTEGER, status TEXT DEFAULT 'pending',
+                teacher_uid TEXT DEFAULT '', notes TEXT DEFAULT '',
+                completed_at TIMESTAMPTZ, updated_at TIMESTAMPTZ DEFAULT NOW())""")
+            cur.execute("""CREATE TABLE IF NOT EXISTS teaching_guides (
+                id SERIAL PRIMARY KEY, curriculum_id INTEGER, guide_type TEXT DEFAULT 'admin',
+                content TEXT NOT NULL, target_lang TEXT DEFAULT '',
+                created_by TEXT DEFAULT '', created_at TIMESTAMPTZ DEFAULT NOW())""")
+            cur.execute("""CREATE TABLE IF NOT EXISTS class_recordings (
+                id SERIAL PRIMARY KEY, class_id TEXT, course_id TEXT,
+                class_name TEXT DEFAULT '', replay_url TEXT DEFAULT '', live_url TEXT DEFAULT '',
+                teacher_uid TEXT DEFAULT '', is_featured BOOLEAN DEFAULT FALSE,
+                created_at TIMESTAMPTZ DEFAULT NOW())""")
             c.commit()
 
     # Credentials
@@ -307,6 +326,106 @@ if DB_URL:
             else: cur.execute(q+" GROUP BY teacher_uid")
             return [{"teacherUid":r["teacher_uid"],"ratingCount":r["cnt"],"avgScore":round(float(r["avg_score"]),1)} for r in cur.fetchall()]
 
+    # Curriculum
+    def add_curriculum(level, unit_num, title, desc="", key_points="[]", materials=""):
+        with _conn() as c:
+            cur=c.cursor(); cur.execute("INSERT INTO curriculum(course_level,unit_number,unit_title,description,key_points,materials_ref)VALUES(%s,%s,%s,%s,%s,%s)RETURNING id",
+                (level,unit_num,title,desc,key_points,materials)); cid=cur.fetchone()["id"]; c.commit(); return cid
+    def update_curriculum(cid, level, unit_num, title, desc="", key_points="[]", materials=""):
+        with _conn() as c:
+            c.cursor().execute("UPDATE curriculum SET course_level=%s,unit_number=%s,unit_title=%s,description=%s,key_points=%s,materials_ref=%s,updated_at=NOW() WHERE id=%s",
+                (level,unit_num,title,desc,key_points,materials,cid)); c.commit()
+    def del_curriculum(cid):
+        with _conn() as c:
+            cur=c.cursor(); cur.execute("DELETE FROM curriculum WHERE id=%s",(cid,))
+            cur.execute("DELETE FROM student_progress WHERE curriculum_id=%s",(cid,))
+            cur.execute("DELETE FROM teaching_guides WHERE curriculum_id=%s",(cid,)); c.commit()
+    def list_curriculum(level=None):
+        with _conn() as c:
+            cur=c.cursor()
+            if level: cur.execute("SELECT * FROM curriculum WHERE course_level=%s ORDER BY unit_number",(level,))
+            else: cur.execute("SELECT * FROM curriculum ORDER BY course_level, unit_number")
+            return [{"id":r["id"],"level":r["course_level"],"unitNumber":r["unit_number"],"title":r["unit_title"],
+                     "description":r["description"],"keyPoints":r["key_points"],"materials":r["materials_ref"],
+                     "updated":str(r["updated_at"])} for r in cur.fetchall()]
+    def get_curriculum(cid):
+        with _conn() as c:
+            cur=c.cursor(); cur.execute("SELECT * FROM curriculum WHERE id=%s",(cid,))
+            r=cur.fetchone()
+            if r: return {"id":r["id"],"level":r["course_level"],"unitNumber":r["unit_number"],"title":r["unit_title"],
+                          "description":r["description"],"keyPoints":r["key_points"],"materials":r["materials_ref"]}
+            return None
+
+    # Student Progress
+    def set_progress(student_uid, curriculum_id, status, teacher_uid="", notes="", course_id=""):
+        with _conn() as c:
+            cur=c.cursor(); cur.execute("""INSERT INTO student_progress(student_uid,curriculum_id,status,teacher_uid,notes,course_id,updated_at,completed_at)
+                VALUES(%s,%s,%s,%s,%s,%s,NOW(),CASE WHEN %s='completed' THEN NOW() ELSE NULL END)
+                ON CONFLICT DO NOTHING""",
+                (student_uid,curriculum_id,status,teacher_uid,notes,course_id,status))
+            cur.execute("UPDATE student_progress SET status=%s,notes=%s,updated_at=NOW(),completed_at=CASE WHEN %s='completed' THEN NOW() ELSE completed_at END WHERE student_uid=%s AND curriculum_id=%s",
+                (status,notes,status,student_uid,curriculum_id)); c.commit()
+    def get_progress(student_uid, course_id=None):
+        with _conn() as c:
+            cur=c.cursor()
+            q="""SELECT sp.*, c.course_level, c.unit_number, c.unit_title FROM student_progress sp
+                 LEFT JOIN curriculum c ON sp.curriculum_id=c.id WHERE sp.student_uid=%s"""
+            p=[student_uid]
+            if course_id: q+=" AND sp.course_id=%s"; p.append(course_id)
+            cur.execute(q+" ORDER BY c.course_level, c.unit_number", p)
+            return [{"id":r["id"],"studentUid":r["student_uid"],"curriculumId":r["curriculum_id"],
+                     "status":r["status"],"notes":r["notes"],"teacherUid":r["teacher_uid"],
+                     "level":r.get("course_level",""),"unitNumber":r.get("unit_number",0),
+                     "unitTitle":r.get("unit_title",""),"updated":str(r["updated_at"]),
+                     "completed":str(r["completed_at"]) if r["completed_at"] else None} for r in cur.fetchall()]
+    def get_teacher_students_progress(teacher_uid):
+        with _conn() as c:
+            cur=c.cursor()
+            cur.execute("""SELECT sp.student_uid, cu.nickname, c.course_level, c.unit_number, c.unit_title, sp.status, sp.notes
+                FROM student_progress sp
+                LEFT JOIN curriculum c ON sp.curriculum_id=c.id
+                LEFT JOIN classin_users cu ON sp.student_uid=cu.uid
+                WHERE sp.teacher_uid=%s ORDER BY cu.nickname, c.course_level, c.unit_number""", (teacher_uid,))
+            return [{"studentUid":r["student_uid"],"studentName":r.get("nickname",""),"level":r.get("course_level",""),
+                     "unitNumber":r.get("unit_number",0),"unitTitle":r.get("unit_title",""),
+                     "status":r["status"],"notes":r["notes"]} for r in cur.fetchall()]
+
+    # Teaching Guides
+    def add_guide(curriculum_id, content, guide_type="admin", target_lang="", created_by=""):
+        with _conn() as c:
+            cur=c.cursor(); cur.execute("INSERT INTO teaching_guides(curriculum_id,content,guide_type,target_lang,created_by)VALUES(%s,%s,%s,%s,%s)RETURNING id",
+                (curriculum_id,content,guide_type,target_lang,created_by)); gid=cur.fetchone()["id"]; c.commit(); return gid
+    def list_guides(curriculum_id=None):
+        with _conn() as c:
+            cur=c.cursor()
+            if curriculum_id: cur.execute("SELECT * FROM teaching_guides WHERE curriculum_id=%s ORDER BY created_at DESC",(curriculum_id,))
+            else: cur.execute("SELECT * FROM teaching_guides ORDER BY curriculum_id, created_at DESC")
+            return [{"id":r["id"],"curriculumId":r["curriculum_id"],"content":r["content"],
+                     "guideType":r["guide_type"],"targetLang":r["target_lang"],
+                     "createdBy":r["created_by"],"date":str(r["created_at"])} for r in cur.fetchall()]
+    def del_guide(gid):
+        with _conn() as c:
+            c.cursor().execute("DELETE FROM teaching_guides WHERE id=%s",(gid,)); c.commit()
+
+    # Class Recordings
+    def add_recording(class_id, course_id, class_name, replay_url="", live_url="", teacher_uid="", featured=False):
+        with _conn() as c:
+            c.cursor().execute("""INSERT INTO class_recordings(class_id,course_id,class_name,replay_url,live_url,teacher_uid,is_featured)
+                VALUES(%s,%s,%s,%s,%s,%s,%s)ON CONFLICT DO NOTHING""",
+                (class_id,course_id,class_name,replay_url,live_url,teacher_uid,featured)); c.commit()
+    def list_recordings(teacher_uid=None, featured_only=False):
+        with _conn() as c:
+            cur=c.cursor(); q="SELECT * FROM class_recordings WHERE 1=1"; p=[]
+            if teacher_uid: q+=" AND teacher_uid=%s"; p.append(teacher_uid)
+            if featured_only: q+=" AND is_featured=TRUE"
+            cur.execute(q+" ORDER BY created_at DESC", p)
+            return [{"id":r["id"],"classId":r["class_id"],"courseId":r["course_id"],"className":r["class_name"],
+                     "replayUrl":r["replay_url"],"liveUrl":r["live_url"],"teacherUid":r["teacher_uid"],
+                     "featured":r["is_featured"],"date":str(r["created_at"])} for r in cur.fetchall()]
+    def toggle_featured(rec_id, featured):
+        with _conn() as c:
+            c.cursor().execute("UPDATE class_recordings SET is_featured=%s WHERE id=%s",(featured,rec_id)); c.commit()
+
     def count_all():
         with _conn() as c:
             cur=c.cursor(); d={}
@@ -449,4 +568,28 @@ else:
         return {"teachers":len([u for u in _users.values() if u["role"]=="teacher"]),
                 "students":len([u for u in _users.values() if u["role"]=="student"]),
                 "courses":len(_courses),"classes":len(_classes),"webhooks":len(_webhooks),"feedbacks":len(_feedbacks)}
+
+    # In-memory stubs for new tables
+    _curriculum=[]; _cur_counter=[0]; _progress=[]; _prg_counter=[0]; _guides=[]; _gd_counter=[0]; _recordings=[]
+    def add_curriculum(level,un,title,desc="",kp="[]",mat=""): _cur_counter[0]+=1; _curriculum.append({"id":_cur_counter[0],"level":level,"unitNumber":un,"title":title,"description":desc,"keyPoints":kp,"materials":mat,"updated":datetime.now().isoformat()}); return _cur_counter[0]
+    def update_curriculum(cid,level,un,title,desc="",kp="[]",mat=""):
+        for c in _curriculum:
+            if c["id"]==cid: c.update({"level":level,"unitNumber":un,"title":title,"description":desc,"keyPoints":kp,"materials":mat})
+    def del_curriculum(cid): _curriculum[:]=[c for c in _curriculum if c["id"]!=cid]
+    def list_curriculum(level=None): return sorted([c for c in _curriculum if not level or c["level"]==level],key=lambda x:(x["level"],x["unitNumber"]))
+    def get_curriculum(cid):
+        for c in _curriculum:
+            if c["id"]==cid: return c
+        return None
+    def set_progress(suid,cid,status,tuid="",notes="",course_id=""): _prg_counter[0]+=1; _progress.append({"id":_prg_counter[0],"studentUid":suid,"curriculumId":cid,"status":status,"teacherUid":tuid,"notes":notes,"level":"","unitNumber":0,"unitTitle":"","updated":datetime.now().isoformat(),"completed":None})
+    def get_progress(suid,course_id=None): return [p for p in _progress if p["studentUid"]==suid]
+    def get_teacher_students_progress(tuid): return [p for p in _progress if p["teacherUid"]==tuid]
+    def add_guide(cid,content,gt="admin",tl="",cb=""): _gd_counter[0]+=1; _guides.append({"id":_gd_counter[0],"curriculumId":cid,"content":content,"guideType":gt,"targetLang":tl,"createdBy":cb,"date":datetime.now().isoformat()}); return _gd_counter[0]
+    def list_guides(cid=None): return [g for g in _guides if not cid or g["curriculumId"]==cid]
+    def del_guide(gid): _guides[:]=[g for g in _guides if g["id"]!=gid]
+    def add_recording(clid,coid,cname,replay="",live="",tuid="",feat=False): _recordings.append({"id":len(_recordings)+1,"classId":clid,"courseId":coid,"className":cname,"replayUrl":replay,"liveUrl":live,"teacherUid":tuid,"featured":feat,"date":datetime.now().isoformat()})
+    def list_recordings(tuid=None,featured_only=False): r=_recordings; (tuid and (r:=[x for x in r if x["teacherUid"]==tuid])); (featured_only and (r:=[x for x in r if x["featured"]])); return r
+    def toggle_featured(rid,feat):
+        for r in _recordings:
+            if r["id"]==rid: r["featured"]=feat
     print("[DB] In-memory mode")

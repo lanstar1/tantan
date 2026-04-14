@@ -146,6 +146,9 @@ select.fi{cursor:pointer;appearance:none;background-image:url("data:image/svg+xm
         <div class="nav-lb">데이터</div>
         <div class="ni ao" data-p="webhooks"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg></span>웹훅</div>
         <div class="ni" data-p="materials"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg></span>자료실</div>
+        <div class="ni ao" data-p="curriculum"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg></span>교육과정</div>
+        <div class="ni" data-p="progress"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>학생진도/지침</div>
+        <div class="ni" data-p="recordings"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg></span>수업 녹화</div>
         <div class="ni" data-p="feedback"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>피드백/별점</div>
         <div class="ni" data-p="settlement"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></span>정산/수입</div>
         <div class="ni" data-p="absences"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></span>결석 증빙</div>
@@ -355,6 +358,52 @@ select.fi{cursor:pointer;appearance:none;background-image:url("data:image/svg+xm
     <div class="cd"><div class="cd-t">📋 내 문의 내역</div><div id="inqList">-</div></div>
 </div>
 
+<div class="pg" id="pg-curriculum">
+    <div class="pg-hd"><h2>교육과정 관리</h2><p>레벨별 단원 및 핵심 교육 포인트 등록</p></div>
+    <div class="cd"><div class="cd-t">➕ 단원 등록</div>
+        <div class="row3"><div class="fg"><label class="fl">레벨</label><select class="fi" id="curLevel"><option value="초급">초급</option><option value="중급">중급</option><option value="고급">고급</option><option value="비즈니스">비즈니스</option></select></div>
+        <div class="fg"><label class="fl">단원 번호</label><input class="fi" id="curNum" type="number" min="1" value="1"></div>
+        <div class="fg"><label class="fl">단원 제목</label><input class="fi" id="curTitle" placeholder="예: 인사하기"></div></div>
+        <div class="fg"><label class="fl">단원 설명</label><textarea class="fi" id="curDesc" rows="2" placeholder="이 단원에서 다루는 내용"></textarea></div>
+        <div class="fg"><label class="fl">핵심 교육 포인트 (줄바꿈으로 구분)</label><textarea class="fi" id="curPoints" rows="3" placeholder="존댓말/반말 구분&#10;자기소개 패턴&#10;인사 상황별 표현"></textarea></div>
+        <div class="bg"><button class="btn btn-p" onclick="addCurriculum()">등록</button></div>
+        <div class="res" id="curR"><span></span><span></span></div></div>
+    <div class="cd"><div class="cd-t">📋 교육과정 목록 <select class="fi" style="width:auto;margin-left:auto;padding:4px 30px 4px 10px;font-size:11px" id="curFilter" onchange="loadCurriculum()"><option value="">전체</option><option value="초급">초급</option><option value="중급">중급</option><option value="고급">고급</option><option value="비즈니스">비즈니스</option></select></div>
+        <div id="curList">-</div></div>
+</div>
+
+<div class="pg" id="pg-progress">
+    <div class="pg-hd"><h2>학생 진도 / 수업 지침</h2><p>학생별 교육과정 진도 관리 및 수업 지침서</p></div>
+    <div class="cd"><div class="cd-t">📊 진도 업데이트</div>
+        <div class="row3"><div class="fg"><label class="fl">학생 UID</label><input class="fi" id="prgStudent" placeholder="학생 UID"></div>
+        <div class="fg"><label class="fl">교육과정 ID</label><input class="fi" id="prgCurId" type="number" placeholder="단원 ID"></div>
+        <div class="fg"><label class="fl">상태</label><select class="fi" id="prgStatus"><option value="pending">예정</option><option value="in_progress">진행 중</option><option value="completed">완료</option></select></div></div>
+        <div class="fg"><label class="fl">메모</label><input class="fi" id="prgNotes" placeholder="특이사항, 추가 설명"></div>
+        <div class="bg"><button class="btn btn-p" onclick="updateProgress()">진도 저장</button></div>
+        <div class="res" id="prgR"><span></span><span></span></div></div>
+    <div class="cd"><div class="cd-t">👨‍🏫 내 학생 진도 현황 <button class="btn btn-o" style="margin-left:auto;padding:5px 10px;font-size:11px" onclick="loadMyProgress()">새로고침</button></div>
+        <div id="prgList">-</div></div>
+    <div class="cd"><div class="cd-t">📝 수업 지침서 <button class="btn btn-o" style="margin-left:auto;padding:5px 10px;font-size:11px" onclick="loadGuides()">전체 조회</button></div>
+        <div class="row"><div class="fg"><label class="fl">교육과정 ID</label><input class="fi" id="guideForCur" type="number" placeholder="단원 ID"></div>
+        <div class="fg"><label class="fl">학생 모국어 (AI용)</label><input class="fi" id="guideLang" placeholder="중국어, 영어, 일본어 등"></div></div>
+        <div class="bg"><button class="btn btn-p" onclick="loadGuides()">지침서 조회</button><button class="btn btn-s" onclick="generateAIGuide()">🤖 AI 지침 생성</button></div>
+        <div id="guideList" style="margin-top:12px">-</div>
+        <div class="res" id="guideR"><span></span><span></span></div></div>
+</div>
+
+<div class="pg" id="pg-recordings">
+    <div class="pg-hd"><h2>수업 녹화</h2><p>수업 녹화 영상 관리 및 우수 수업 공유</p></div>
+    <div class="cd ao"><div class="cd-t">🎬 녹화 URL 가져오기</div>
+        <div class="hint">수업 생성 시 녹화(record=1)를 설정한 수업만 녹화 URL을 가져올 수 있습니다.</div>
+        <div class="row3"><div class="fg"><label class="fl">코스 ID</label><input class="fi" id="recCourseId" placeholder="코스 ID"></div>
+        <div class="fg"><label class="fl">수업 ID</label><input class="fi" id="recClassId" placeholder="수업 ID"></div>
+        <div class="fg"><label class="fl">수업명 (메모)</label><input class="fi" id="recClassName" placeholder="수업 이름"></div></div>
+        <div class="bg"><button class="btn btn-p" onclick="fetchRecording()">녹화 URL 가져오기</button></div>
+        <div class="res" id="recR"><span></span><span></span><div class="rj"></div></div></div>
+    <div class="cd"><div class="cd-t">📋 녹화 목록 <button class="btn btn-o" style="margin-left:auto;padding:5px 10px;font-size:11px" onclick="loadRecordings()">새로고침</button></div>
+        <div id="recList">-</div></div>
+</div>
+
 </main>
 </div>
 <div class="toast-container" id="toastContainer"></div>
@@ -401,6 +450,7 @@ document.querySelectorAll('.ni').forEach(n=>n.addEventListener('click',()=>{
     if(p==='feedback'){loadFB();loadRatings();}if(p==='accounts')loadAccounts();if(p==='calendar')renderCalendar();
     if(p==='availability')loadAvail();if(p==='absences')loadAbsences();
     if(p==='myprofile')loadMyProfile();if(p==='announcements')loadAnn();if(p==='inquiries')loadInq();if(p==='settlement')loadIncome();if(p==='materials')loadCloud();
+    if(p==='curriculum')loadCurriculum();if(p==='progress')loadMyProgress();if(p==='recordings')loadRecordings();
 }));
 
 async function saveCreds(){try{await api('/api/credentials','POST',{sid:document.getElementById('inSID').value.trim(),secret:document.getElementById('inSEC').value.trim()});sR(document.getElementById('setR'),true,'저장 완료')}catch(e){sR(document.getElementById('setR'),false,e.message)}}
@@ -584,11 +634,93 @@ function toggleTheme(){const h=document.documentElement;h.dataset.theme=h.datase
 /* ═══ NEW: Toast ═══ */
 function showToast(msg,type,dur){type=type||'info';dur=dur||4000;const c=document.getElementById('toastContainer'),t=document.createElement('div');t.className='toast '+type;t.textContent=msg;t.onclick=()=>{t.classList.add('toast-out');setTimeout(()=>t.remove(),300)};c.appendChild(t);setTimeout(()=>{if(t.parentNode){t.classList.add('toast-out');setTimeout(()=>t.remove(),300)}},dur)}
 /* ═══ NEW: Command Palette ═══ */
-const CMD_ITEMS=[{l:'대시보드',p:'dashboard'},{l:'강사 관리',p:'teachers'},{l:'학생 관리',p:'students'},{l:'코스 관리',p:'courses'},{l:'수업/입장',p:'classes'},{l:'캘린더',p:'calendar'},{l:'가용시간',p:'availability'},{l:'자료실',p:'materials'},{l:'정산/수입',p:'settlement'},{l:'API 설정',p:'settings'},{l:'웹훅',p:'webhooks'},{l:'계정 관리',p:'accounts'},{l:'내 프로필',p:'myprofile'},{l:'공지사항',p:'announcements'},{l:'1:1 문의',p:'inquiries'},{l:'피드백/별점',p:'feedback'},{l:'결석 증빙',p:'absences'}];
+const CMD_ITEMS=[{l:'대시보드',p:'dashboard'},{l:'강사 관리',p:'teachers'},{l:'학생 관리',p:'students'},{l:'코스 관리',p:'courses'},{l:'수업/입장',p:'classes'},{l:'캘린더',p:'calendar'},{l:'가용시간',p:'availability'},{l:'자료실',p:'materials'},{l:'교육과정',p:'curriculum'},{l:'학생진도/지침',p:'progress'},{l:'수업 녹화',p:'recordings'},{l:'정산/수입',p:'settlement'},{l:'API 설정',p:'settings'},{l:'웹훅',p:'webhooks'},{l:'계정 관리',p:'accounts'},{l:'내 프로필',p:'myprofile'},{l:'공지사항',p:'announcements'},{l:'1:1 문의',p:'inquiries'},{l:'피드백/별점',p:'feedback'},{l:'결석 증빙',p:'absences'}];
 function openCmd(){document.getElementById('cmdOverlay').classList.add('on');document.getElementById('cmdInput').value='';filterCmd('');document.getElementById('cmdInput').focus()}
 function closeCmd(){document.getElementById('cmdOverlay').classList.remove('on')}
 function filterCmd(q){const list=document.getElementById('cmdList');const f=q?CMD_ITEMS.filter(i=>i.l.includes(q)):CMD_ITEMS;list.innerHTML=f.map(i=>`<div class="cmd-item" onclick="navTo('${i.p}');closeCmd()">${i.l}</div>`).join('')}
 document.addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key==='k'){e.preventDefault();openCmd()}if(e.key==='Escape')closeCmd()});
+
+/* ═══ Curriculum ═══ */
+async function addCurriculum(){
+    const pts=document.getElementById('curPoints').value.split('\n').filter(x=>x.trim());
+    try{const d=await api('/api/curriculum','POST',{level:document.getElementById('curLevel').value,
+        unitNumber:parseInt(document.getElementById('curNum').value)||1,title:document.getElementById('curTitle').value,
+        description:document.getElementById('curDesc').value,keyPoints:pts});
+    sR(document.getElementById('curR'),d.success,'등록 완료 (ID:'+d.id+')');loadCurriculum()}catch(e){sR(document.getElementById('curR'),false,e.message)}
+}
+async function loadCurriculum(){
+    const lv=document.getElementById('curFilter')?.value||'';
+    try{const d=await api('/api/curriculum'+(lv?'?level='+encodeURIComponent(lv):''));const el=document.getElementById('curList');
+    if(!d.curriculum.length){el.innerHTML='<div class="empty"><p>등록된 교육과정이 없습니다</p></div>';return}
+    let h='<table class="tbl"><tr><th>ID</th><th>레벨</th><th>과</th><th>제목</th><th>핵심 포인트</th><th></th></tr>';
+    d.curriculum.forEach(c=>{
+        let kp='';try{kp=JSON.parse(c.keyPoints||'[]').join(', ')}catch{kp=c.keyPoints||''}
+        h+=`<tr><td class="uid">${c.id}</td><td><span style="padding:2px 8px;border-radius:6px;font-size:11px;font-weight:600;background:var(--ac-s);color:var(--ac)">${c.level}</span></td><td style="color:var(--txb);font-weight:600">${c.unitNumber}과</td><td style="color:var(--txb)">${c.title}</td><td style="font-size:11px;color:var(--tx2);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${kp}</td><td><button class="btn btn-d" onclick="delCurriculum(${c.id})">삭제</button></td></tr>`});
+    el.innerHTML=h+'</table>'}catch{}
+}
+async function delCurriculum(id){if(!confirm('교육과정 '+id+'번 삭제? (관련 진도/지침도 삭제됩니다)'))return;
+    try{await api('/api/curriculum/'+id,'DELETE');loadCurriculum()}catch(e){alert(e.message)}}
+
+/* ═══ Progress ═══ */
+async function updateProgress(){
+    try{const d=await api('/api/progress','POST',{studentUid:document.getElementById('prgStudent').value,
+        curriculumId:parseInt(document.getElementById('prgCurId').value)||0,
+        status:document.getElementById('prgStatus').value,notes:document.getElementById('prgNotes').value});
+    sR(document.getElementById('prgR'),d.success,'저장 완료');loadMyProgress()}catch(e){sR(document.getElementById('prgR'),false,e.message)}
+}
+async function loadMyProgress(){
+    try{const d=await api('/api/my-students-progress');const el=document.getElementById('prgList');
+    if(!d.students.length){el.innerHTML='<div class="empty"><p>배정된 학생 진도 데이터가 없습니다</p><p style="font-size:11px">학생 진도를 등록하면 여기에 표시됩니다</p></div>';return}
+    const grouped={};d.students.forEach(s=>{const k=s.studentUid+'|'+s.studentName;if(!grouped[k])grouped[k]=[];grouped[k].push(s)});
+    let h='';Object.entries(grouped).forEach(([key,items])=>{
+        const[uid,name]=key.split('|');
+        h+=`<div style="margin-bottom:16px;padding:14px;background:var(--bg3);border-radius:10px"><div style="font-weight:600;color:var(--txb);margin-bottom:8px">👤 ${name||uid} <span class="uid" style="font-size:11px">${uid}</span></div>`;
+        items.forEach(s=>{
+            const icon=s.status==='completed'?'✅':s.status==='in_progress'?'👉':'○';
+            const color=s.status==='completed'?'var(--ok)':s.status==='in_progress'?'var(--ac)':'var(--tx3)';
+            h+=`<div style="padding:4px 0;display:flex;align-items:center;gap:8px"><span style="color:${color}">${icon}</span><span style="color:var(--txb)">${s.level} ${s.unitNumber}과: ${s.unitTitle}</span>${s.notes?`<span style="font-size:11px;color:var(--tx2)">— ${s.notes}</span>`:''}</div>`});
+        h+='</div>'});
+    el.innerHTML=h}catch{}
+}
+
+/* ═══ Guides ═══ */
+async function loadGuides(){
+    const cid=document.getElementById('guideForCur')?.value||'';
+    try{const d=await api('/api/guides'+(cid?'?curriculum_id='+cid:''));const el=document.getElementById('guideList');
+    if(!d.guides.length){el.innerHTML='<div class="empty"><p>등록된 지침서가 없습니다</p></div>';return}
+    let h='';d.guides.forEach(g=>{
+        const badge=g.guideType==='ai'?'<span style="padding:2px 6px;border-radius:6px;font-size:10px;font-weight:600;background:var(--pr-s);color:var(--pr)">AI</span>':'<span style="padding:2px 6px;border-radius:6px;font-size:10px;font-weight:600;background:var(--ok-s);color:var(--ok)">관리자</span>';
+        h+=`<div style="padding:14px;border:1px solid var(--bd0);border-radius:10px;margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="display:flex;gap:6px;align-items:center">${badge}<span style="font-size:11px;color:var(--tx2)">단원 #${g.curriculumId}${g.targetLang?' · 대상: '+g.targetLang:''}</span></div><button class="btn btn-d" onclick="delGuide(${g.id})">삭제</button></div><div style="white-space:pre-wrap;font-size:13px;color:var(--tx1);line-height:1.7">${g.content}</div></div>`});
+    el.innerHTML=h}catch{}
+}
+async function generateAIGuide(){
+    const cid=document.getElementById('guideForCur').value;
+    if(!cid)return alert('교육과정 ID를 입력하세요');
+    const lang=document.getElementById('guideLang').value;
+    document.getElementById('guideList').innerHTML='<div style="padding:20px;text-align:center;color:var(--ac)">🤖 AI가 지침서를 생성하고 있습니다... (약 10~20초)</div>';
+    try{const d=await api('/api/guides/ai-generate','POST',{curriculumId:parseInt(cid),targetLang:lang});
+    if(d.success){showToast('AI 지침서 생성 완료','ok');loadGuides()}
+    else{sR(document.getElementById('guideR'),false,d.message||'생성 실패')}}catch(e){sR(document.getElementById('guideR'),false,e.message)}
+}
+async function delGuide(id){if(!confirm('지침서 삭제?'))return;
+    try{await api('/api/guides/'+id,'DELETE');loadGuides()}catch(e){alert(e.message)}}
+
+/* ═══ Recordings ═══ */
+async function fetchRecording(){
+    const coid=document.getElementById('recCourseId').value,clid=document.getElementById('recClassId').value;
+    if(!coid||!clid)return alert('코스 ID와 수업 ID 필수');
+    try{const d=await api('/api/recordings/fetch','POST',{courseId:coid,classId:clid,className:document.getElementById('recClassName').value,teacherUid:''});
+    sR(document.getElementById('recR'),d.success,d.success?'녹화 URL 저장 완료':d.message,d.raw);
+    if(d.success)loadRecordings()}catch(e){sR(document.getElementById('recR'),false,e.message)}
+}
+async function loadRecordings(){
+    try{const d=await api('/api/recordings');const el=document.getElementById('recList');
+    if(!d.recordings.length){el.innerHTML='<div class="empty"><p>저장된 녹화가 없습니다</p><p style="font-size:11px">녹화 URL 가져오기로 수업 녹화를 등록하세요</p></div>';return}
+    let h='<table class="tbl"><tr><th>수업</th><th>재생 URL</th><th>우수수업</th><th>날짜</th></tr>';
+    d.recordings.forEach(r=>{
+        h+=`<tr><td style="color:var(--txb)">${r.className||r.classId}</td><td>${r.replayUrl?`<a href="${r.replayUrl}" target="_blank" style="color:var(--ac)">▶ 재생</a>`:'—'}</td><td>${r.featured?'⭐ 우수':'—'}</td><td style="font-size:11px;color:var(--tx2)">${(r.date||'').slice(0,10)}</td></tr>`});
+    el.innerHTML=h+'</table>'}catch{}
+}
 
 checkAuth();
 </script>

@@ -100,6 +100,16 @@ async def del_file(sid, secret, file_id): return await call_cloud_v1("delFile", 
 async def rename_folder(sid, secret, folder_id, name): return await call_cloud_v1("renameFolder", sid, secret, {"folderId": str(folder_id), "folderName": name})
 async def del_folder(sid, secret, folder_id): return await call_cloud_v1("delFolder", sid, secret, {"folderId": str(folder_id)})
 
+# Broadcast - Recording & Live replay
+async def get_webcast_url(sid, secret, course_id, class_id):
+    return await call_v1("getWebcastUrl", sid, secret, {"courseId": str(course_id), "classId": str(class_id)})
+
+# Labels
+async def add_course_labels(sid, secret, course_id, labels):
+    return await call_v1("addCourseLabels", sid, secret, {"courseId": str(course_id), "labels": labels})
+async def add_class_labels(sid, secret, course_id, class_id, labels):
+    return await call_v1("addClassLabels", sid, secret, {"courseId": str(course_id), "classId": str(class_id), "labels": labels})
+
 # Webhook
 def verify_webhook_safe_key(secret, ts, sk): return hashlib.md5(f"{secret}{ts}".encode()).hexdigest() == sk
 

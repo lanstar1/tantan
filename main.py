@@ -4,13 +4,14 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from pydantic import BaseModel
 from typing import Optional
-import hashlib, secrets, io, csv
+import hashlib, secrets, io, csv, json
 from classin_client import (test_connection, call_v1, call_v2, parse_v1, register_user, add_teacher, add_student,
     create_course, create_class, delete_class, add_course_student, add_course_teacher,
     get_login_link, verify_webhook_safe_key, update_class_student_comment,
     get_top_folder, get_folder_list, get_cloud_list, upload_file_cloud,
-    create_folder, rename_file, del_file, rename_folder, del_folder)
-import db
+    create_folder, rename_file, del_file, rename_folder, del_folder,
+    get_webcast_url, add_course_labels, add_class_labels)
+import db, os
 
 app = FastAPI(title="ClassIn Teacher Portal", version="3.0.0")
 
@@ -441,6 +442,150 @@ async def income(s=Depends(_auth)):
     total_income = round(total_hours * rate)
     return {"teacherUid":uid,"totalClasses":len(cls),"totalHours":total_hours,
             "hourlyRate":rate,"totalIncome":total_income}
+
+# ═══ Curriculum (교육과정) ═══════════════════════
+@app.post("/api/curriculum")
+async def add_cur(request: Request, s=Depends(_admin)):
+    b=await request.json()
+    cid=db.add_curriculum(b.get("level",""),b.get("unitNumber",0),b.get("title",""),
+        b.get("description",""),json.dumps(b.get("keyPoints",[]),ensure_ascii=False),b.get("materials",""))
+    return {"success":True,"id":cid}
+
+@app.get("/api/curriculum")
+async def list_cur(level:str=None, s=Depends(_auth)):
+    return {"curriculum":db.list_curriculum(level)}
+
+@app.get("/api/curriculum/{cid}")
+async def get_cur(cid:int, s=Depends(_auth)):
+    c=db.get_curriculum(cid)
+    if not c: raise HTTPException(404,"교육과정 없음")
+    return c
+
+@app.put("/api/curriculum/{cid}")
+async def update_cur(cid:int, request: Request, s=Depends(_admin)):
+    b=await request.json()
+    db.update_curriculum(cid,b.get("level",""),b.get("unitNumber",0),b.get("title",""),
+        b.get("description",""),json.dumps(b.get("keyPoints",[]),ensure_ascii=False),b.get("materials",""))
+    return {"success":True}
+
+@app.delete("/api/curriculum/{cid}")
+async def del_cur(cid:int, s=Depends(_admin)):
+    db.del_curriculum(cid); return {"success":True}
+
+# ═══ Student Progress (학생 진도) ════════════════
+@app.post("/api/progress")
+async def set_prog(request: Request, s=Depends(_auth)):
+    b=await request.json()
+    tuid=s.get("classInUid","") if s["role"]=="teacher" else b.get("teacherUid","")
+    db.set_progress(b["studentUid"],b["curriculumId"],b.get("status","in_progress"),
+        tuid,b.get("notes",""),b.get("courseId",""))
+    return {"success":True}
+
+@app.get("/api/progress/{student_uid}")
+async def get_prog(student_uid:str, course_id:str=None, s=Depends(_auth)):
+    return {"progress":db.get_progress(student_uid,course_id)}
+
+@app.get("/api/my-students-progress")
+async def my_students(s=Depends(_auth)):
+    uid=s.get("classInUid","")
+    if not uid: return {"students":[]}
+    return {"students":db.get_teacher_students_progress(uid)}
+
+# ═══ Teaching Guides (수업 지침서) ═══════════════
+@app.post("/api/guides")
+async def add_gd(request: Request, s=Depends(_auth)):
+    b=await request.json()
+    gid=db.add_guide(b["curriculumId"],b["content"],b.get("guideType","admin"),
+        b.get("targetLang",""),s.get("displayName",""))
+    return {"success":True,"id":gid}
+
+@app.get("/api/guides")
+async def list_gd(curriculum_id:int=None, s=Depends(_auth)):
+    return {"guides":db.list_guides(curriculum_id)}
+
+@app.delete("/api/guides/{gid}")
+async def del_gd(gid:int, s=Depends(_admin)):
+    db.del_guide(gid); return {"success":True}
+
+@app.post("/api/guides/ai-generate")
+async def ai_guide(request: Request, s=Depends(_auth)):
+    b=await request.json()
+    cur=db.get_curriculum(b.get("curriculumId",0))
+    if not cur: raise HTTPException(404,"교육과정 없음")
+    student_lang=b.get("targetLang","")
+    student_info=b.get("studentInfo","")
+    try:
+        import httpx
+        prompt=f"""한국어 교육 전문가로서, 아래 수업 단원에 대한 강사용 수업 지침서를 작성해주세요.
+
+단원: {cur['title']} (레벨: {cur['level']}, {cur['unitNumber']}과)
+단원 설명: {cur.get('description','')}
+핵심 포인트: {cur.get('keyPoints','[]')}
+{f'학생 모국어: {student_lang}' if student_lang else ''}
+{f'학생 정보: {student_info}' if student_info else ''}
+
+다음을 포함해서 작성:
+1. 수업 도입 (5분) - 워밍업 활동
+2. 핵심 문법/어휘 설명 포인트
+3. 연습 활동 제안 (2-3개)
+4. {f'{student_lang} 모국어 화자가 자주 실수하는 부분과 대처법' if student_lang else '외국인 학습자가 자주 실수하는 부분'}
+5. 수업 마무리 활동
+
+간결하고 실용적으로 작성해주세요."""
+        api_key=os.environ.get("ANTHROPIC_API_KEY","")
+        if not api_key: return {"success":False,"message":"ANTHROPIC_API_KEY 환경변수가 설정되지 않았습니다"}
+        async with httpx.AsyncClient(timeout=60) as client:
+            resp=await client.post("https://api.anthropic.com/v1/messages",
+                headers={"x-api-key":api_key,"anthropic-version":"2023-06-01","content-type":"application/json"},
+                json={"model":"claude-sonnet-4-20250514","max_tokens":2000,"messages":[{"role":"user","content":prompt}]})
+            data=resp.json()
+            content=data.get("content",[{}])[0].get("text","생성 실패")
+        gid=db.add_guide(b["curriculumId"],content,"ai",student_lang,s.get("displayName",""))
+        return {"success":True,"id":gid,"content":content}
+    except Exception as ex:
+        return {"success":False,"message":str(ex)}
+
+# ═══ Class Recordings (수업 녹화) ════════════════
+@app.post("/api/recordings/fetch")
+async def fetch_rec(request: Request, s=Depends(_auth)):
+    b=await request.json()
+    result=await get_webcast_url(*_creds(),b.get("courseId",""),b.get("classId",""))
+    e,err,data=parse_v1(result)
+    if e==1 and data:
+        replay=data.get("replay_url","") if isinstance(data,dict) else ""
+        live=data.get("live_url","") if isinstance(data,dict) else ""
+        if isinstance(data,dict) and data.get("live_url"):
+            replay=data.get("live_url","")
+        db.add_recording(b.get("classId",""),b.get("courseId",""),b.get("className",""),
+            replay,live,b.get("teacherUid",""))
+        return {"success":True,"data":data,"raw":result}
+    return {"success":False,"message":err,"raw":result}
+
+@app.get("/api/recordings")
+async def list_rec(featured:bool=False, s=Depends(_auth)):
+    tuid=s.get("classInUid","") if s["role"]=="teacher" else None
+    return {"recordings":db.list_recordings(tuid,featured)}
+
+@app.post("/api/recordings/{rid}/featured")
+async def toggle_feat(rid:int, request: Request, s=Depends(_admin)):
+    b=await request.json()
+    db.toggle_featured(rid,b.get("featured",False))
+    return {"success":True}
+
+# ═══ Labels ══════════════════════════════════════
+@app.post("/api/labels/course")
+async def label_course(request: Request, s=Depends(_admin)):
+    b=await request.json()
+    result=await add_course_labels(*_creds(),b.get("courseId",""),b.get("labels",""))
+    e,err,data=parse_v1(result)
+    return {"success":e==1,"message":err,"raw":result}
+
+@app.post("/api/labels/class")
+async def label_class(request: Request, s=Depends(_admin)):
+    b=await request.json()
+    result=await add_class_labels(*_creds(),b.get("courseId",""),b.get("classId",""),b.get("labels",""))
+    e,err,data=parse_v1(result)
+    return {"success":e==1,"message":err,"raw":result}
 
 # ═══ Static ══════════════════════════════════════
 app.mount("/static", StaticFiles(directory="static"), name="static")
