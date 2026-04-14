@@ -44,7 +44,7 @@ class APICallIn(M): action:str; version:str="v1"; params:Optional[dict]=None
 class RegIn(M): telephone:str; password:str; nickname:str=""; role:str="teacher"
 class AddUserIn(M): account:str; name:str
 class CourseIn(M): name:str; teacherUid:Optional[str]=None
-class ClassIn_(M): courseId:str; className:str; beginTime:int; endTime:int; teacherUid:str; seatNum:int=6
+class ClassIn_(M): courseId:str; className:str; beginTime:int; endTime:int; teacherUid:str; seatNum:int=6; record:int=0; live:int=0; replay:int=0
 class CSIn(M): courseId:str; studentUid:str
 class LLIn(M): uid:str
 class FBIn(M): courseId:str; classId:str; teacherUid:str; studentUid:str; comment:str
@@ -171,7 +171,7 @@ async def del_course(course_id:str, s=Depends(_admin)):
 
 @app.post("/api/classes/create")
 async def cr_class(req: ClassIn_, s=Depends(_admin)):
-    result = await create_class(*_creds(), req.courseId, req.className, req.beginTime, req.endTime, req.teacherUid, req.seatNum)
+    result = await create_class(*_creds(), req.courseId, req.className, req.beginTime, req.endTime, req.teacherUid, req.seatNum, req.record, req.live, req.replay)
     e,err,data=parse_v1(result)
     if e==1: clid=str(data); db.set_class(clid,req.courseId,req.className,req.beginTime,req.endTime,req.teacherUid); return {"success":True,"classId":clid,"raw":result}
     return {"success":False,"message":f"({e}): {err}","raw":result}

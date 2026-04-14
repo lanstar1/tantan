@@ -61,9 +61,12 @@ async def create_course(sid, secret, name, tuid=None):
     p = {"courseName": name}
     if tuid: p["mainTeacherUid"] = str(tuid)
     return await call_v1("addCourse", sid, secret, p)
-async def create_class(sid, secret, cid, name, begin, end, tuid, seat=0):
+async def create_class(sid, secret, cid, name, begin, end, tuid, seat=0, record=0, live=0, replay=0):
     p = {"courseId": str(cid), "className": name, "beginTime": str(begin), "endTime": str(end), "teacherUid": str(tuid)}
     if seat: p["seatNum"] = str(seat)
+    if record: p["record"] = "1"
+    if live: p["live"] = "1"
+    if replay: p["replay"] = "1"
     return await call_v1("addCourseClass", sid, secret, p)
 async def delete_class(sid, secret, cid, clid): return await call_v1("delCourseClass", sid, secret, {"courseId": str(cid), "classId": str(clid)})
 async def add_course_student(sid, secret, cid, suid): return await call_v1("addCourseStudent", sid, secret, {"courseId": str(cid), "studentUid": str(suid)})
